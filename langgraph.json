@@ -12,9 +12,7 @@
     "python-dotenv==1.0.1"
   ],
   "graphs": {
-    "green_hill_control_interface": "./main.py:app",
-    "green_hill_orchestrator": "./main.py:app", 
-    "ghc": "./main.py:app"
+    "ghccontrol": "./main.py:app"
   },
   "env": ".env",
   "python_version": "3.11"
