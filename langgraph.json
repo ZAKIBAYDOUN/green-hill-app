@@ -1,0 +1,20 @@
+{
+  "dependencies": [
+    "langgraph==0.2.30",
+    "langchain==0.2.16", 
+    "langchain-openai==0.1.23",
+    "langchain-chroma==0.1.4",
+    "langchain-community==0.2.16",
+    "openai==1.40.6",
+    "chromadb==0.5.5",
+    "pydantic==2.8.2",
+    "python-dotenv==1.0.1"
+  ],
+  "graphs": {
+    "green_hill_control_interface": "./main.py:app",
+    "green_hill_orchestrator": "./main.py:app", 
+    "ghc": "./main.py:app"
+  },
+  "env": ".env",
+  "python_version": "3.11"
+}
