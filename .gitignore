@@ -11,6 +11,10 @@ vectorstore/
 # Environment files
 .env
 
+# LangGraph runtime files
+.langgraph_*
+*.pckl
+
 # C extensions
 *.so
 
