@@ -3,9 +3,10 @@ Models for Green Hill Canarias Agent System
 Defines State, Message and AgentName classes per specification
 """
 
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Optional, Union, Annotated
 from pydantic import BaseModel, Field
 from enum import Enum
+from langgraph.graph.message import add_messages
 
 
 class AgentName(str, Enum):
@@ -23,6 +24,17 @@ class AgentName(str, Enum):
 
     def __repr__(self) -> str:
         return f"AgentName.{self.name}"
+
+
+# LangGraph compatible state
+class AgentState(BaseModel):
+    """State for LangGraph agents"""
+    messages: Annotated[list, add_messages] = Field(default_factory=list)
+    agent_type: Optional[str] = None
+    context_used: Optional[int] = None
+    
+    class Config:
+        arbitrary_types_allowed = True
 
 
 class Message(BaseModel):

@@ -1,19 +1,13 @@
 {
-  "dependencies": [
-    ".",
-    "langgraph==0.2.30",
-    "langchain==0.2.16", 
-    "langchain-openai==0.1.23",
-    "langchain-chroma==0.1.4",
-    "langchain-community==0.2.16",
-    "openai==1.40.6",
-    "chromadb==0.5.5",
-    "pydantic==2.8.2",
-    "python-dotenv==1.0.1"
-  ],
   "graphs": {
-    "ghccontrol": "./main.py:app"
+    "ghc": "./main.py:app"
   },
-  "env": ".env",
-  "python_version": "3.11"
+  "python_version": "3.11",
+  "image_distro": "wolfi",
+  "dependencies": [
+    "langchain>=0.2.10",
+    "langgraph>=0.2.5",
+    "langchain-openai",
+    "chromadb"
+  ]
 }
