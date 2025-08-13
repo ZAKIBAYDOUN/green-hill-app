@@ -3,6 +3,14 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Vector store files (too large for GitHub)
+vectorstore/
+*.bin
+*.sqlite3
+
+# Environment files
+.env
+
 # C extensions
 *.so
 
