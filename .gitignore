@@ -4,7 +4,41 @@ __pycache__/
 *$py.class
 
 # Vector store files (too large for GitHub)
-vectorstore/
+vector_store/
+vector_store_upload/
+*.sqlite3
+*.bin
+*.pickle
+docs/
+*.pdf
+*.docx
+*.xlsx
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+chroma_db/
 *.bin
 *.sqlite3
 

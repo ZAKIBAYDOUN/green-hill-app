@@ -1,6 +1,6 @@
 """
 Models for Green Hill Canarias Agent System
-Defines State, Message and AgentName classes per specification
+Defines State, Message and AgentName classes per GPT-5 Pro specification
 """
 
 from typing import Dict, List, Any, Optional, Union, Annotated
@@ -12,12 +12,13 @@ from langgraph.graph.message import add_messages
 class AgentName(str, Enum):
     """Agent names in the Green Hill Canarias system"""
     strategy = "Strategy"
+    operations = "Operations"
     finance = "Finance"
-    construction = "Construction"
-    qms = "QMS"
-    governance = "Governance"
-    regulation = "Regulation"
-    ir = "IR"
+    market = "Market"
+    risk = "Risk"
+    compliance = "Compliance"
+    innovation = "Innovation"
+    green_hill = "GreenHillGPT"
 
     def __str__(self) -> str:
         return self.value
@@ -42,40 +43,45 @@ class Message(BaseModel):
     role: str = Field(description="Message sender role")
     content: str = Field(description="Message content")
 
+    def __str__(self) -> str:
+        return f"{self.role}: {self.content[:100]}..."
 
-class State(BaseModel):
-    """Global state object for the Green Hill Canarias system"""
-    question: str = Field(..., description="Business task or question")
-    context: Dict = Field(default_factory=dict, description="Context information")
-    history: List[Message] = Field(default_factory=list, description="Message history")
-    notes: List[str] = Field(default_factory=list, description="Agent notes")
-    plan: Optional[Dict] = Field(None, description="Strategic plan")
-    financials: Optional[Dict] = Field(None, description="Financial data")
-    schedule: Optional[Dict] = Field(None, description="Construction schedule")
-    capex_breakdown: Optional[Dict] = Field(None, description="CAPEX breakdown")
-    quality_gaps: Optional[List[str]] = Field(None, description="Quality gaps")
-    controls: Optional[Dict] = Field(None, description="Control systems")
-    decision_log: Optional[List[Dict]] = Field(None, description="Decision log")
-    owners: Optional[Dict] = Field(None, description="Responsibility owners")
-    regulatory_actions: Optional[List[Dict]] = Field(None, description="Regulatory actions")
-    memo: Optional[str] = Field(None, description="Investor memo")
-    deck_outline: Optional[List[str]] = Field(None, description="Presentation outline")
-    current_agent: Optional[AgentName] = Field(None, description="Current agent")
-    next_agent: Optional[AgentName] = Field(None, description="Next agent")
-    finalize: bool = Field(False, description="Finalization flag")
-    decisions: List[Dict] = Field(default_factory=list, description="Decisions made")
-    final_answer: Optional[str] = Field(None, description="Final answer")
-    errors: List[str] = Field(default_factory=list, description="Error messages")
-    sources_used: List[str] = Field(default_factory=list, description="Sources used")
-    processing_mode: str = Field("comprehensive", description="Processing mode")
+
+class TwinState(BaseModel):
+    """State for Green Hill Canarias Digital Twin"""
+    question: str = Field(..., description="User query or business task")
+    context: Dict = Field(default_factory=dict)
+    history: List[Message] = Field(default_factory=list)
+    notes: List[str] = Field(default_factory=list)
+
+    # Agent outputs (optional at start)
+    strategy_output: Optional[Dict] = None
+    operations_output: Optional[Dict] = None
+    finance_output: Optional[Dict] = None
+    market_output: Optional[Dict] = None
+    risk_output: Optional[Dict] = None
+    compliance_output: Optional[Dict] = None
+    innovation_output: Optional[Dict] = None
+    green_hill_response: Optional[Dict] = None
+
+    # Flow control
+    current_agent: Optional[AgentName] = None
+    next_agent: Optional[AgentName] = None
+    finalize: bool = False
+
+    # Final output / error fields
+    final_answer: Optional[str] = None
+    errors: List[str] = Field(default_factory=list)
 
     class Config:
         """Pydantic configuration"""
         arbitrary_types_allowed = True
-    content: str = Field(description="Message content")
 
-    def __str__(self) -> str:
-        return f"{self.role}: {self.content[:100]}..."
+
+# Legacy State for backward compatibility
+class State(TwinState):
+    """Legacy state - kept for compatibility"""
+    pass
 
     def __repr__(self) -> str:
         return f"Message(role='{self.role}', content='{self.content[:50]}...')"

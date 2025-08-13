@@ -1,6 +1,6 @@
 {
   "graphs": {
-    "ghc": "./main.py:app"
+    "ghc": "./ghc_twin.py:app"
   },
   "python_version": "3.11",
   "image_distro": "wolfi",
