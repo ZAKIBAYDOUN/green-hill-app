@@ -290,17 +290,27 @@ def build_graph():
 
     # Define edges
     graph.add_edge(START, "digital_twin")
-    # Route conditionally from digital_twin to either END or first agent
-    graph.add_conditional_edges("digital_twin", router)
-    
-    # Conditional edges for agent routing
-    graph.add_conditional_edges("strategy", router)
-    graph.add_conditional_edges("finance", router)
-    graph.add_conditional_edges("operations", router)
-    graph.add_conditional_edges("market", router)
-    graph.add_conditional_edges("risk", router)
-    graph.add_conditional_edges("compliance", router)
-    graph.add_conditional_edges("innovation", router)
+    # Unified routing map for all conditional edges
+    route_map = {
+        "strategy": "strategy",
+        "finance": "finance",
+        "operations": "operations",
+        "market": "market",
+        "risk": "risk",
+        "compliance": "compliance",
+        "innovation": "innovation",
+        END: END,
+    }
+
+    # Route conditionally from orchestrator and between agents
+    graph.add_conditional_edges("digital_twin", router, route_map)
+    graph.add_conditional_edges("strategy", router, route_map)
+    graph.add_conditional_edges("finance", router, route_map)
+    graph.add_conditional_edges("operations", router, route_map)
+    graph.add_conditional_edges("market", router, route_map)
+    graph.add_conditional_edges("risk", router, route_map)
+    graph.add_conditional_edges("compliance", router, route_map)
+    graph.add_conditional_edges("innovation", router, route_map)
 
     return graph.compile()
 
