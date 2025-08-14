@@ -2,21 +2,35 @@
 import os
 from typing import List, Optional
 
-DEFAULT_EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+# Delegate ingestion/loading to the root document_store module
+from document_store import ingest_canonical_docs as _ingest_canonical_docs
+from document_store import get_document_store as _get_document_store
+
 
 class DocumentStore:
-    """Vector store wrapper with graceful fallbacks"""
-    
-    def __init__(self, persist_dir: str = "./chroma_db"):
+    """Thin wrapper over Chroma vector store with a simple query() API."""
+
+    def __init__(self, persist_dir: str):
         self.persist_dir = persist_dir
-        self.vector_store = None
-        self._availability = None
-        
-        # Try to initialize vector store
+        self.vectordb = _get_document_store(persist_dir)
+
+    def is_available(self) -> bool:
+        return self.vectordb is not None
+
+    def query(self, text: str, k: int = 5) -> str:
+        if not self.vectordb:
+            return "No vector store available"
         try:
-            self._initialize_vector_store()
+            docs = self.vectordb.similarity_search(text, k=k)
+            return "\n\n".join(d.page_content for d in docs)
         except Exception as e:
-            print(f"Warning: Vector store initialization failed: {e}")
-            print("Document store will use fallback mode")
-    
-    def _initialize_vector_store(self):
+            return f"Vector store query failed: {e}"
+
+
+def ingest_canonical_docs(doc_paths: List[str], persist_dir: str):
+    """Expose ingestion through app namespace."""
+    return _ingest_canonical_docs(doc_paths, persist_dir)
+
+
+def get_document_store(persist_dir: str) -> Optional[DocumentStore]:
+    return DocumentStore(persist_dir)
