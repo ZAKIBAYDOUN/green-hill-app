@@ -20,5 +20,5 @@ jobs:
       - name: Add item to organization project
         uses: actions/add-to-project@v0.5.0
         with:
-          project-url: https://github.com/orgs/green-hill-canarias/projects/2
+          project-url: ${{ secrets.ORG_PROJECT_URL }}
           github-token: ${{ secrets.ORG_PROJECT_TOKEN }}
