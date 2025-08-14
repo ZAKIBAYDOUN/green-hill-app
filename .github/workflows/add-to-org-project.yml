@@ -1,0 +1,24 @@
+name: Add issues and PRs to org project
+
+on:
+  issues:
+    types: [opened, reopened, labeled]
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+
+jobs:
+  add-to-project:
+    # PRs from forks don't have access to repo/org secrets; skip them
+    if: ${{ github.event_name == 'issues' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      projects: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add item to organization project
+        uses: actions/add-to-project@v0.5.0
+        with:
+          project-url: https://github.com/orgs/green-hill-canarias/projects/2
+          github-token: ${{ secrets.ORG_PROJECT_TOKEN }}
