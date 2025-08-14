@@ -44,15 +44,32 @@ git push -u origin main
 6. **Auto-deploy**: Enable
 
 ### Step 3: Environment Variables
-Set these in the LangGraph Cloud deployment:
+Set these in the LangGraph Cloud deployment (placeholders; do not commit real keys):
 
 ```bash
-OPENAI_API_KEY=sk-proj-...
-LANGCHAIN_API_KEY=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
-LANGCHAIN_TRACING_V2=true
-LANGCHAIN_PROJECT=green-hill-canarias
+# Required (choose ONE of these)
+# For development with LangGraph Platform access
+LANGSMITH_API_KEY=<your_langsmith_api_key>
+# OR for production licensing
+LANGGRAPH_CLOUD_LICENSE_KEY=<your_langgraph_license_key>
+
+# Recommended for LLMs/RAG
+OPENAI_API_KEY=<your_openai_key>
 OPENAI_CHAT_MODEL=gpt-4o-mini
-OPENAI_EMBED_MODEL=text-embedding-3-small
+
+# Embeddings (choose backend)
+EMBEDDING_BACKEND=hf                     # or: openai
+HUGGINGFACE_EMBED_MODEL=sentence-transformers/all-MiniLM-L6-v2
+# If using OpenAI embeddings instead:
+# OPENAI_EMBED_MODEL=text-embedding-3-small
+
+# Optional RAG bootstrap
+VECTOR_STORE_DIR=vector_store
+# VECTOR_STORE_URL=https://example.com/chroma_store.zip
+
+# Optional LangSmith tracing
+# LANGCHAIN_TRACING_V2=true
+# LANGCHAIN_PROJECT=green-hill-canarias
 ```
 
 ### Step 4: Deploy
