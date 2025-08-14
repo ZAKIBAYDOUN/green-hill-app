@@ -49,7 +49,8 @@ class Message(BaseModel):
 
 class TwinState(BaseModel):
     """State for Green Hill Canarias Digital Twin"""
-    question: str = Field(..., description="User query or business task")
+    # Make question optional to avoid validation errors when callers omit it
+    question: Optional[str] = Field(default=None, description="User query or business task")
     context: Dict = Field(default_factory=dict)
     history: List[Message] = Field(default_factory=list)
     notes: List[str] = Field(default_factory=list)

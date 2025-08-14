@@ -21,6 +21,13 @@ def record(state: TwinState, agent: AgentName, content: str, **kwargs) -> TwinSt
 # Digital twin entrypoint: query vector store for context
 def digital_twin_node(state: TwinState) -> TwinState:
     """Digital Twin orchestrator - retrieves context and routes to first agent"""
+    # Defensive: ensure a question exists
+    if not getattr(state, "question", None):
+        state.errors.append("Missing 'question' in state")
+        state.finalize = True
+        state.final_answer = "Error: Missing 'question' in state. Hint: Pass {\"question\": \"...\"} as input payload"
+        return state
+
     try:
         persist_dir = os.getenv("VECTOR_STORE_DIR", "vector_store")
         vectordb = get_document_store(persist_dir)
@@ -283,7 +290,8 @@ def build_graph():
 
     # Define edges
     graph.add_edge(START, "digital_twin")
-    graph.add_edge("digital_twin", "strategy")
+    # Route conditionally from digital_twin to either END or first agent
+    graph.add_conditional_edges("digital_twin", router)
     
     # Conditional edges for agent routing
     graph.add_conditional_edges("strategy", router)
