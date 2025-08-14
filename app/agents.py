@@ -66,8 +66,8 @@ def strategy_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
         "analysis": analysis,
         "context_used": len((ctx or "").split("\n\n")),
     }
-    record_output(state, AgentName.STRATEGY, "strategy_output", output, "Strategic analysis completed")
-    state.next_agent = _next_from_targets(state, AgentName.STRATEGY)
+    record_output(state, AgentName.strategy, "strategy_output", output, "Strategic analysis completed")
+    state.next_agent = _next_from_targets(state, AgentName.strategy)
     return state
 
 def operations_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
@@ -81,8 +81,8 @@ def operations_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
         "analysis": analysis,
         "context_used": len((ctx or "").split("\n\n")),
     }
-    record_output(state, AgentName.OPERATIONS, "operations_output", output, "Operations planning completed")
-    state.next_agent = _next_from_targets(state, AgentName.OPERATIONS)
+    record_output(state, AgentName.operations, "operations_output", output, "Operations planning completed")
+    state.next_agent = _next_from_targets(state, AgentName.operations)
     return state
 
 def finance_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
@@ -96,8 +96,8 @@ def finance_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
         "analysis": analysis,
         "context_used": len((ctx or "").split("\n\n")),
     }
-    record_output(state, AgentName.FINANCE, "finance_output", output, "Financial modeling completed")
-    state.next_agent = _next_from_targets(state, AgentName.FINANCE)
+    record_output(state, AgentName.finance, "finance_output", output, "Financial modeling completed")
+    state.next_agent = _next_from_targets(state, AgentName.finance)
     return state
 
 def market_intel_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
@@ -111,8 +111,8 @@ def market_intel_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
         "analysis": analysis,
         "context_used": len((ctx or "").split("\n\n")),
     }
-    record_output(state, AgentName.MARKET, "market_output", output, "Market intelligence gathered")
-    state.next_agent = _next_from_targets(state, AgentName.MARKET)
+    record_output(state, AgentName.market, "market_output", output, "Market intelligence gathered")
+    state.next_agent = _next_from_targets(state, AgentName.market)
     return state
 
 def risk_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
@@ -126,8 +126,8 @@ def risk_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
         "analysis": analysis,
         "context_used": len((ctx or "").split("\n\n")),
     }
-    record_output(state, AgentName.RISK, "risk_output", output, "Risk analysis completed")
-    state.next_agent = _next_from_targets(state, AgentName.RISK)
+    record_output(state, AgentName.risk, "risk_output", output, "Risk analysis completed")
+    state.next_agent = _next_from_targets(state, AgentName.risk)
     return state
 
 def compliance_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
@@ -141,8 +141,8 @@ def compliance_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
         "analysis": analysis,
         "context_used": len((ctx or "").split("\n\n")),
     }
-    record_output(state, AgentName.COMPLIANCE, "compliance_output", output, "Compliance framework outlined")
-    state.next_agent = _next_from_targets(state, AgentName.COMPLIANCE)
+    record_output(state, AgentName.compliance, "compliance_output", output, "Compliance framework outlined")
+    state.next_agent = _next_from_targets(state, AgentName.compliance)
     return state
 
 def innovation_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
@@ -155,8 +155,8 @@ def innovation_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
         "analysis": analysis,
         "context_used": len((ctx or "").split("\n\n")),
     }
-    record_output(state, AgentName.INNOVATION, "innovation_output", output, "Innovation roadmap prepared")
-    state.next_agent = _next_from_targets(state, AgentName.INNOVATION)
+    record_output(state, AgentName.innovation, "innovation_output", output, "Innovation roadmap prepared")
+    state.next_agent = _next_from_targets(state, AgentName.innovation)
     return state
 
 def finalize_node(state: TwinState, doc_store: DocumentStore) -> TwinState:

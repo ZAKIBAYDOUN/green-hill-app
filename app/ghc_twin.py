@@ -22,20 +22,20 @@ def classify_request(state: TwinState) -> List[AgentName]:
     st = (state.source_type or "public").lower()
     if st == "master":
         return [
-            AgentName.STRATEGY, AgentName.FINANCE, AgentName.OPERATIONS,
-            AgentName.MARKET, AgentName.RISK, AgentName.COMPLIANCE, AgentName.INNOVATION,
-            AgentName.GREEN_HILL,
+            AgentName.strategy, AgentName.finance, AgentName.operations,
+            AgentName.market, AgentName.risk, AgentName.compliance, AgentName.innovation,
+            AgentName.green_hill,
         ]
     if st in {"shareholder", "investor"}:
-        return [AgentName.STRATEGY, AgentName.FINANCE, AgentName.MARKET, AgentName.RISK, AgentName.GREEN_HILL]
+        return [AgentName.strategy, AgentName.finance, AgentName.market, AgentName.risk, AgentName.green_hill]
     if st in {"supplier", "provider"}:
-        return [AgentName.OPERATIONS, AgentName.COMPLIANCE]
+        return [AgentName.operations, AgentName.compliance]
     if st == "public":
-        return [AgentName.MARKET, AgentName.STRATEGY]
+        return [AgentName.market, AgentName.strategy]
     if st == "ocs_feed":
-        return [AgentName.OPERATIONS, AgentName.COMPLIANCE]
+        return [AgentName.operations, AgentName.compliance]
     if st == "web_source":
-        return [AgentName.MARKET, AgentName.RISK]
+        return [AgentName.market, AgentName.risk]
     return []
 
 
@@ -58,7 +58,10 @@ def digital_twin(state: TwinState) -> TwinState:
         state.context["retrieved_docs"] = ["No vector store available"]
 
     # Classify
-    targets = classify_request(state)
+    # Allow direct mode via target_agent/target_agents
+    if state.target_agent and state.target_agent not in state.target_agents:
+        state.target_agents.append(state.target_agent)
+    targets = state.target_agents or classify_request(state)
     state.target_agents = targets
     if not targets:
         state.finalize = True
@@ -72,23 +75,50 @@ def digital_twin(state: TwinState) -> TwinState:
     return state
 
 
-def router(state: TwinState):
-    if state.finalize:
+def intake_node(state: TwinState) -> TwinState:
+    """Accepts arbitrary document/feed input and does light classification.
+
+    - If payload_ref present and no question: prioritize innovation/operations.
+    - If web_source: market and risk.
+    - If ocs_feed: operations and compliance.
+    """
+    st = state
+    st.history.append({"role": "System", "content": "Intake processed"})
+    targets = st.target_agents or []
+    stype = (st.source_type or "public").lower()
+    if st.payload_ref and not st.question:
+        if AgentName.innovation not in targets:
+            targets.append(AgentName.innovation)
+        if AgentName.operations not in targets:
+            targets.append(AgentName.operations)
+    elif stype == "web_source":
+        targets = targets or [AgentName.market, AgentName.risk]
+    elif stype == "ocs_feed":
+        targets = targets or [AgentName.operations, AgentName.compliance]
+    st.target_agents = targets
+    # If no question, allow flow to digital_twin which will fetch context & route
+    return st
+
+
+def router(state):
+    # Accept both dict and TwinState
+    st = state if isinstance(state, TwinState) else TwinState(**state)
+    if st.finalize:
         return END
     m = {
-        AgentName.STRATEGY: "strategy",
-        AgentName.FINANCE: "finance",
-        AgentName.OPERATIONS: "operations",
-        AgentName.MARKET: "market",
-        AgentName.RISK: "risk",
-        AgentName.COMPLIANCE: "compliance",
-        AgentName.INNOVATION: "innovation",
-    AgentName.GREEN_HILL: "green_hill",
+        AgentName.strategy: "strategy",
+        AgentName.finance: "finance",
+        AgentName.operations: "operations",
+        AgentName.market: "market",
+        AgentName.risk: "risk",
+        AgentName.compliance: "compliance",
+        AgentName.innovation: "innovation",
+        AgentName.green_hill: "green_hill",
     }
     # If no explicit next agent but not finalized, go to finalize node
-    if state.next_agent is None and not state.finalize:
+    if st.next_agent is None and not st.finalize:
         return "finalize"
-    return m.get(state.next_agent, END)
+    return m.get(st.next_agent, END)
 
 
 def build_graph():
@@ -96,20 +126,35 @@ def build_graph():
     # Initialize a single document store instance
     persist_dir = os.getenv("VECTOR_STORE_DIR", "vector_store")
     store = get_document_store(persist_dir)
+    # Wrappers to convert dict<->TwinState for nodes
+    def wrap(node_fn):
+        def _wrapped(s):
+            st = s if isinstance(s, TwinState) else TwinState(**s)
+            out = node_fn(st)
+            return out.model_dump() if isinstance(out, TwinState) else out
+        return _wrapped
+    def wrap_with_store(node_fn):
+        def _wrapped(s):
+            st = s if isinstance(s, TwinState) else TwinState(**s)
+            out = node_fn(st, store)
+            return out.model_dump() if isinstance(out, TwinState) else out
+        return _wrapped
     # Nodes
-    g.add_node("digital_twin", digital_twin)
-    g.add_node("strategy", lambda s: strategy_node(s, store))
-    g.add_node("finance", lambda s: finance_node(s, store))
-    g.add_node("operations", lambda s: operations_node(s, store))
-    g.add_node("market", lambda s: market_node(s, store))
-    g.add_node("risk", lambda s: risk_node(s, store))
-    g.add_node("compliance", lambda s: compliance_node(s, store))
-    g.add_node("innovation", lambda s: innovation_node(s, store))
-    g.add_node("green_hill", lambda s: green_hill_node(s, store))
-    g.add_node("finalize", lambda s: finalize_node(s, store))
+    g.add_node("intake", wrap(intake_node))
+    g.add_node("digital_twin", wrap(digital_twin))
+    g.add_node("strategy", wrap_with_store(strategy_node))
+    g.add_node("finance", wrap_with_store(finance_node))
+    g.add_node("operations", wrap_with_store(operations_node))
+    g.add_node("market", wrap_with_store(market_node))
+    g.add_node("risk", wrap_with_store(risk_node))
+    g.add_node("compliance", wrap_with_store(compliance_node))
+    g.add_node("innovation", wrap_with_store(innovation_node))
+    g.add_node("green_hill", wrap_with_store(green_hill_node))
+    g.add_node("finalize", wrap_with_store(finalize_node))
 
     # Edges
-    g.add_edge(START, "digital_twin")
+    g.add_edge(START, "intake")
+    g.add_edge("intake", "digital_twin")
     route_map = {
         "strategy": "strategy",
         "finance": "finance",
@@ -118,7 +163,7 @@ def build_graph():
         "risk": "risk",
         "compliance": "compliance",
         "innovation": "innovation",
-    "green_hill": "green_hill",
+        "green_hill": "green_hill",
         "finalize": "finalize",
         END: END,
     }
