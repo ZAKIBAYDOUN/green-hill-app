@@ -16,6 +16,16 @@ def record(state: TwinState, agent: AgentName, content: str, **kwargs) -> TwinSt
         setattr(state, f"{agent.value.lower()}_output", v)
     
     state.current_agent = agent
+    # CEO feedback log of inputs/outputs per agent
+    try:
+        state.ceo_feedbacks.append({
+            "agent": agent.value,
+            "content": content,
+            "outputs": {k: v for k, v in kwargs.items()}
+        })
+    except Exception:
+        # Never break flow on logging
+        pass
     return state
 
 # Digital twin entrypoint: query vector store for context
@@ -43,9 +53,20 @@ def digital_twin_node(state: TwinState) -> TwinState:
             state.context["retrieved_docs"] = ["No vector store available - using baseline knowledge"]
             state.context["sources"] = ["baseline"]
             print("⚠️ No vector store available, using baseline knowledge")
-        
-        # Start with strategy agent
-        state.next_agent = AgentName.strategy
+        # Determine first hop based on orchestration mode / source_type
+        if state.orchestration_mode == "direct" and state.target_agent:
+            state.next_agent = state.target_agent
+        else:
+            # role-aware default
+            role = (state.source_type or "").lower()
+            if role in {"master", "shareholder", "investor"}:
+                state.next_agent = AgentName.strategy
+            elif role in {"supplier", "provider"}:
+                state.next_agent = AgentName.operations
+            elif role == "public":
+                state.next_agent = AgentName.compliance
+            else:
+                state.next_agent = AgentName.strategy
         
     except Exception as e:
         state.errors.append(f"Digital Twin initialization error: {e}")
@@ -222,14 +243,22 @@ def innovation_node(state: TwinState) -> TwinState:
     state.finalize = True
     
     # Compose final answer from all agent outputs
+    strat = state.strategy_output or {}
+    fin = state.finance_output or {}
+    ops = state.operations_output or {}
+    mkt = state.market_output or {}
+    rsk = state.risk_output or {}
+    cmp_ = state.compliance_output or {}
+    inn = state.innovation_output or {}
+
     parts = [
-        f"🎯 **Strategy**: {state.strategy_output.get('strategic_focus', 'N/A')}",
-        f"💰 **Finance**: ROI {state.finance_output.get('roi_projection', 'N/A')}, CAPEX €{state.finance_output.get('capex_estimate', 'N/A'):,}",
-        f"⚙️ **Operations**: {state.operations_output.get('implementation_schedule', 'N/A')}",
-        f"📊 **Market**: {state.market_output.get('growth_projection', 'N/A')} growth in {state.market_output.get('market_opportunity', 'target markets')}",
-        f"⚠️ **Risk**: {state.risk_output.get('risk_assessment', 'N/A')} with mitigation strategies",
-        f"📋 **Compliance**: {state.compliance_output.get('timeline', 'N/A')} for {state.compliance_output.get('regulatory_framework', 'framework')}",
-        f"💡 **Innovation**: {state.innovation_output.get('r_and_d_focus', 'N/A')} with {len(state.innovation_output.get('key_initiatives', []))} key initiatives"
+        f"🎯 **Strategy**: {strat.get('strategic_focus', 'N/A')}",
+        f"💰 **Finance**: ROI {fin.get('roi_projection', 'N/A')}, CAPEX €{fin.get('capex_estimate', 'N/A') if isinstance(fin.get('capex_estimate', 'N/A'), int) else fin.get('capex_estimate', 'N/A')}",
+        f"⚙️ **Operations**: {ops.get('implementation_schedule', 'N/A')}",
+        f"📊 **Market**: {mkt.get('growth_projection', 'N/A')} growth in {mkt.get('market_opportunity', 'target markets')}",
+        f"⚠️ **Risk**: {rsk.get('risk_assessment', 'N/A')} with mitigation strategies",
+        f"📋 **Compliance**: {cmp_.get('timeline', 'N/A')} for {cmp_.get('regulatory_framework', 'framework')}",
+        f"💡 **Innovation**: {inn.get('r_and_d_focus', 'N/A')} with {len(inn.get('key_initiatives', []))} key initiatives"
     ]
     
     if state.green_hill_response:
@@ -256,6 +285,41 @@ The Digital Twin analysis reveals a strategic opportunity with strong fundamenta
     
     return state
 
+# Optional Green Hill GPT node (can be routed to directly or after agents)
+def green_hill_node(state: TwinState) -> TwinState:
+    """Green Hill GPT integration node (placeholder unless GREEN_HILL_URL/KEY set)"""
+    state = record(state, AgentName.green_hill, "Green Hill GPT consultation starting")
+    if os.getenv("GREEN_HILL_URL") and os.getenv("GREEN_HILL_KEY"):
+        try:
+            payload = {"question": state.question}
+            headers = {"Authorization": f"Bearer {os.getenv('GREEN_HILL_KEY')}"}
+            response = requests.post(os.getenv("GREEN_HILL_URL"), json=payload, headers=headers, timeout=30)
+            state.green_hill_response = response.json()
+            state.notes.append("Green Hill GPT responded")
+        except Exception as e:
+            state.errors.append(f"Green Hill GPT error: {e}")
+    else:
+        state.notes.append("GREEN_HILL_URL/KEY not set; skipped external call")
+
+    # If previous agents have filled outputs, compose a final answer; else provide minimal reply
+    if not state.finalize:
+        parts = [
+            f"🎯 **Strategy**: {state.strategy_output.get('strategic_focus', 'N/A') if state.strategy_output else 'N/A'}",
+            f"💰 **Finance**: {state.finance_output.get('roi_projection', 'N/A') if state.finance_output else 'N/A'}",
+            f"⚙️ **Operations**: {state.operations_output.get('implementation_schedule', 'N/A') if state.operations_output else 'N/A'}",
+        ]
+        state.final_answer = (state.final_answer or "") + ("\n\n" if state.final_answer else "") + "\n".join(parts)
+        if state.green_hill_response:
+            state.final_answer += "\n\n🤖 Green Hill GPT: consultation completed."
+        state.finalize = True
+    return state
+
+# Start router: choose CEO orchestrator vs direct agent
+def start_router(state: TwinState):
+    if state.orchestration_mode == "direct" and state.target_agent:
+        return state.target_agent.name.lower()
+    return "digital_twin"
+
 # Router defines next node or end
 def router(state: TwinState):
     """Route to next agent or end processing"""
@@ -271,6 +335,7 @@ def router(state: TwinState):
         AgentName.risk: "risk",
         AgentName.compliance: "compliance",
         AgentName.innovation: "innovation",
+        AgentName.green_hill: "green_hill",
     }.get(state.next_agent, END)
 
 # Build the graph
@@ -287,9 +352,11 @@ def build_graph():
     graph.add_node("risk", risk_node)
     graph.add_node("compliance", compliance_node)
     graph.add_node("innovation", innovation_node)
+    # GreenHillGPT integration node (optional route)
+    graph.add_node("green_hill", green_hill_node)
 
     # Define edges
-    graph.add_edge(START, "digital_twin")
+    # Conditional START routing: CEO (digital_twin) or direct agent
     # Unified routing map for all conditional edges
     route_map = {
         "strategy": "strategy",
@@ -299,8 +366,11 @@ def build_graph():
         "risk": "risk",
         "compliance": "compliance",
         "innovation": "innovation",
+    "green_hill": "green_hill",
+        "digital_twin": "digital_twin",
         END: END,
     }
+    graph.add_conditional_edges(START, start_router, route_map)
 
     # Route conditionally from orchestrator and between agents
     graph.add_conditional_edges("digital_twin", router, route_map)

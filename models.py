@@ -55,6 +55,12 @@ class TwinState(BaseModel):
     history: List[Message] = Field(default_factory=list)
     notes: List[str] = Field(default_factory=list)
 
+    # Audience / intake metadata (role-aware routing)
+    source_type: Optional[str] = Field(default=None, description="Requester role: master|shareholder|investor|supplier|provider|public")
+    source_id: Optional[str] = Field(default=None, description="Optional requester identifier")
+    priority: str = Field(default="normal", description="Priority: high|normal|low")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata for routing/audit")
+
     # Agent outputs (optional at start)
     strategy_output: Optional[Dict] = None
     operations_output: Optional[Dict] = None
@@ -68,7 +74,12 @@ class TwinState(BaseModel):
     # Flow control
     current_agent: Optional[AgentName] = None
     next_agent: Optional[AgentName] = None
+    orchestration_mode: str = Field(default="ceo", description="Routing mode: 'ceo' or 'direct'")
+    target_agent: Optional[AgentName] = Field(default=None, description="Direct mode target agent")
     finalize: bool = False
+
+    # Feedback channel to CEO/orchestrator from agents
+    ceo_feedbacks: List[Dict[str, Any]] = Field(default_factory=list)
 
     # Final output / error fields
     final_answer: Optional[str] = None
