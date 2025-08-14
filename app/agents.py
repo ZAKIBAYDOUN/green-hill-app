@@ -1,6 +1,6 @@
 # app/agents.py
-from .models import TwinState, AgentName, Message
-from .document_store import DocumentStore
+from app.models import TwinState, AgentName, Message
+from app.document_store import DocumentStore
 from typing import Optional, Dict, Any
 import os
 
@@ -187,4 +187,73 @@ def finalize_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
     )
     state.finalize = True
     state.history.append(Message(role="System", content="Final synthesis completed"))
+    # Optional: archive outputs into vector store for future retrieval
+    if os.getenv("ARCHIVE_AGENT_OUTPUTS", "1").lower() in {"1", "true", "yes"}:
+        try:
+            doc_store.add_agent_outputs(state)
+        except Exception:
+            pass
+    return state
+
+
+def green_hill_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
+    """Optional GreenHillGPT step that synthesizes an investor-facing memo using LLM.
+
+    Uses GREEN_HILL_CHAT_MODEL if set, else OPENAI_CHAT_MODEL. Falls back gracefully.
+    """
+    # Build compact context from prior outputs
+    strat = state.strategy_output or {}
+    fin = state.finance_output or {}
+    ops = state.operations_output or {}
+    mkt = state.market_output or {}
+    rsk = state.risk_output or {}
+    cmp_ = state.compliance_output or {}
+    inn = state.innovation_output or {}
+
+    retrieved = state.context.get("retrieved_docs", [])
+
+    system_prompt = (
+        "You are Green Hill Canarias Investor Assistant. Produce a crisp, factual, and "
+        "investor-ready memo. Merge domain agent insights without repeating. Include a "
+        "short executive summary, key metrics, risks, and next steps."
+    )
+
+    user_prompt = (
+        f"Question: {state.question}\n\n"
+        f"Strategy: {strat}\nFinance: {fin}\nOperations: {ops}\n"
+        f"Market: {mkt}\nRisk: {rsk}\nCompliance: {cmp_}\nInnovation: {inn}\n\n"
+        f"Top context: {retrieved[:3]}"
+    )
+
+    content = None
+    try:
+        from langchain_openai import ChatOpenAI
+        from langchain_core.messages import HumanMessage, SystemMessage
+
+        model = os.getenv("GREEN_HILL_CHAT_MODEL") or os.getenv("OPENAI_CHAT_MODEL", "gpt-4o")
+        llm = ChatOpenAI(model=model, temperature=0.2)
+        resp = llm.invoke([SystemMessage(content=system_prompt), HumanMessage(content=user_prompt)])
+        content = resp.content
+    except Exception as e:
+        content = (
+            "Investor memo (LLM unavailable):\n"
+            "- Summary: Multi-agent analysis complete.\n"
+            f"- Key ROI: {fin.get('roi_projection', 'N/A')} | CAPEX: {fin.get('capex_estimate', 'N/A')}\n"
+            f"- Risks: {', '.join(rsk.get('primary_risks', [])) or 'N/A'}\n"
+            f"- Next: {inn.get('initiatives', ['Prioritize planning'])[0]}\n"
+        )
+
+    state.green_hill_response = {"memo": content}
+    state.history.append(Message(role="GreenHillGPT", content="Investor memo prepared"))
+    # If there is no queued next agent, finalize here
+    state.next_agent = None
+    if not state.final_answer:
+        state.final_answer = content
+    state.finalize = True
+    # Optional: archive outputs including memo
+    if os.getenv("ARCHIVE_AGENT_OUTPUTS", "1").lower() in {"1", "true", "yes"}:
+        try:
+            doc_store.add_agent_outputs(state)
+        except Exception:
+            pass
     return state

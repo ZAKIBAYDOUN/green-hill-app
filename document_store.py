@@ -1,9 +1,13 @@
-# document_store.py
+"""Document store utilities with configurable embedding backend.
+
+Defaults to Hugging Face embeddings for local/dev. Set EMBEDDING_BACKEND=openai to
+use OpenAI embeddings (requires OPENAI_API_KEY). Ensure the same backend/model is
+used for ingestion and querying to maintain vector space consistency.
+"""
 import os
 from typing import List, Optional
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.docstore.document import Document
-from langchain_openai import OpenAIEmbeddings
 
 def load_documents(doc_paths: List[str]) -> List[Document]:
     """Load documents from various formats"""
@@ -69,6 +73,24 @@ def load_documents(doc_paths: List[str]) -> List[Document]:
             
     return documents
 
+def _get_embeddings():
+    backend = os.getenv("EMBEDDING_BACKEND", "hf").lower()
+    if backend == "openai":
+        from langchain_openai import OpenAIEmbeddings
+        model = os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-large")
+        return OpenAIEmbeddings(model=model)
+    # Default to Hugging Face for local/dev
+    try:
+        from langchain_huggingface import HuggingFaceEmbeddings
+    except Exception as e:
+        # Fallback to OpenAI if HF not available
+        from langchain_openai import OpenAIEmbeddings
+        model = os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-large")
+        return OpenAIEmbeddings(model=model)
+    model_name = os.getenv("HUGGINGFACE_EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+    return HuggingFaceEmbeddings(model_name=model_name)
+
+
 def ingest_canonical_docs(doc_paths: List[str], persist_dir: str):
     """Ingest documents and create vector store"""
     print(f"Ingesting {len(doc_paths)} documents...")
@@ -99,49 +121,42 @@ def ingest_canonical_docs(doc_paths: List[str], persist_dir: str):
     
     # Create embeddings and vector store
     try:
-        embeddings = OpenAIEmbeddings(
-            model=os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-large")
-        )
-        
+        embeddings = _get_embeddings()
         # Use Chroma for vector storage
         from langchain_chroma import Chroma
-        
+
         # Ensure persist directory exists
         os.makedirs(persist_dir, exist_ok=True)
-        
+
         vectordb = Chroma.from_documents(
-            docs, 
-            embedding=embeddings, 
-            persist_directory=persist_dir
+            docs,
+            embedding=embeddings,
+            persist_directory=persist_dir,
         )
-        
+
         print(f"Vector store created successfully at {persist_dir}")
         return vectordb
-        
+
     except Exception as e:
         print(f"Error creating vector store: {e}")
         return None
 
-def get_document_store(persist_dir: str) -> Optional['Chroma']:
+def get_document_store(persist_dir: str):
     """Get existing document store"""
     try:
-        embeddings = OpenAIEmbeddings(
-            model=os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-large")
-        )
-        
+        embeddings = _get_embeddings()
         from langchain_chroma import Chroma
-        
+
         if not os.path.exists(persist_dir):
             print(f"Vector store not found at {persist_dir}")
             return None
-            
+
         vectordb = Chroma(
-            persist_directory=persist_dir, 
-            embedding_function=embeddings
+            persist_directory=persist_dir,
+            embedding_function=embeddings,
         )
-        
         return vectordb
-        
+
     except Exception as e:
         print(f"Error loading vector store: {e}")
         return None

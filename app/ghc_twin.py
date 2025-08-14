@@ -2,9 +2,9 @@
 import os
 from typing import List
 from langgraph.graph import StateGraph, START, END
-from .models import TwinState, AgentName
-from .document_store import get_document_store
-from .agents import (
+from app.models import TwinState, AgentName
+from app.document_store import get_document_store
+from app.agents import (
     strategy_node,
     finance_node,
     operations_node,
@@ -12,6 +12,7 @@ from .agents import (
     risk_node,
     compliance_node,
     innovation_node,
+    green_hill_node,
     finalize_node,
 )
 
@@ -23,9 +24,10 @@ def classify_request(state: TwinState) -> List[AgentName]:
         return [
             AgentName.STRATEGY, AgentName.FINANCE, AgentName.OPERATIONS,
             AgentName.MARKET, AgentName.RISK, AgentName.COMPLIANCE, AgentName.INNOVATION,
+            AgentName.GREEN_HILL,
         ]
     if st in {"shareholder", "investor"}:
-        return [AgentName.STRATEGY, AgentName.FINANCE, AgentName.MARKET, AgentName.RISK]
+        return [AgentName.STRATEGY, AgentName.FINANCE, AgentName.MARKET, AgentName.RISK, AgentName.GREEN_HILL]
     if st in {"supplier", "provider"}:
         return [AgentName.OPERATIONS, AgentName.COMPLIANCE]
     if st == "public":
@@ -81,6 +83,7 @@ def router(state: TwinState):
         AgentName.RISK: "risk",
         AgentName.COMPLIANCE: "compliance",
         AgentName.INNOVATION: "innovation",
+    AgentName.GREEN_HILL: "green_hill",
     }
     # If no explicit next agent but not finalized, go to finalize node
     if state.next_agent is None and not state.finalize:
@@ -102,6 +105,7 @@ def build_graph():
     g.add_node("risk", lambda s: risk_node(s, store))
     g.add_node("compliance", lambda s: compliance_node(s, store))
     g.add_node("innovation", lambda s: innovation_node(s, store))
+    g.add_node("green_hill", lambda s: green_hill_node(s, store))
     g.add_node("finalize", lambda s: finalize_node(s, store))
 
     # Edges
@@ -114,6 +118,7 @@ def build_graph():
         "risk": "risk",
         "compliance": "compliance",
         "innovation": "innovation",
+    "green_hill": "green_hill",
         "finalize": "finalize",
         END: END,
     }
@@ -125,6 +130,7 @@ def build_graph():
     g.add_conditional_edges("risk", router, route_map)
     g.add_conditional_edges("compliance", router, route_map)
     g.add_conditional_edges("innovation", router, route_map)
+    g.add_conditional_edges("green_hill", router, route_map)
 
     return g.compile()
 app = build_graph()

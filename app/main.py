@@ -1,11 +1,11 @@
 # app/main.py
 from langgraph.graph import StateGraph, END
-from .models import TwinState, AgentName
-from .agents import (
+from app.models import TwinState, AgentName
+from app.agents import (
     strategy_node, operations_node, finance_node, market_intel_node,
     risk_node, compliance_node, innovation_node, finalize_node
 )
-from .document_store import DocumentStore
+from app.document_store import DocumentStore
 from typing import Dict, Callable, Any
 import os
 
