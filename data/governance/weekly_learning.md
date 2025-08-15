@@ -1,0 +1,2 @@
+# Weekly Learning
+- Initial entry

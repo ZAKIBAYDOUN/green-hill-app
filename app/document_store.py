@@ -4,6 +4,7 @@ Self-contained: no imports from root-level modules.
 """
 import os
 import uuid
+import json
 from typing import List, Optional, Dict, Any
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -27,10 +28,22 @@ def _get_embeddings():
 
 
 class DocumentStore:
-    """Thin wrapper over Chroma vector store with a simple query() API."""
+    """Thin wrapper over Chroma vector store with a simple query() API.
 
-    def __init__(self, persist_dir: str):
-        self.persist_dir = persist_dir
+    Parameters
+    ----------
+    persist_dir: Optional[str]
+        Directory to persist the vector store. If not provided, the
+        ``VECTORSTORE_DIR`` environment variable is used. As a final
+        fallback, ``"vector_store"`` is chosen. This allows the document
+        store to be instantiated without explicit configuration which is
+        useful in tests and simple deployments.
+    """
+
+    def __init__(self, persist_dir: Optional[str] = None):
+        self.persist_dir = (
+            persist_dir or os.getenv("VECTORSTORE_DIR") or "vector_store"
+        )
         self.vectordb = None
         self._try_load()
 
@@ -151,8 +164,20 @@ class DocumentStore:
         return self.add_texts(texts, metas, ids)
 
 
-def ingest_canonical_docs(doc_paths: List[str], persist_dir: str):
-    """Ingest explicit file paths into a Chroma vector store."""
+from langchain.docstore.document import Document
+
+
+def ingest_canonical_docs(
+    doc_paths: List[str], persist_dir: Optional[str] = None
+):
+    """Recursively ingest files into a Chroma vector store.
+
+    Each document is tagged with ``domain`` and ``subdomain`` metadata fields.
+    ``domain`` is derived from the top-level folder relative to the provided
+    ``doc_paths`` and ``subdomain`` from the filename (numeric prefixes like
+    ``01_`` are stripped). ``persist_dir`` defaults to the value of the
+    ``VECTORSTORE_DIR`` environment variable or ``"vector_store"``.
+    """
     try:
         from langchain_community.document_loaders import (
             PyPDFLoader,
@@ -160,25 +185,71 @@ def ingest_canonical_docs(doc_paths: List[str], persist_dir: str):
             UnstructuredExcelLoader,
             TextLoader,
         )
+    except Exception:
+        PyPDFLoader = Docx2txtLoader = UnstructuredExcelLoader = TextLoader = None
+    try:
         from langchain_chroma import Chroma
     except Exception as e:
         print(f"Missing ingestion deps: {e}")
         return None
 
+    files: List[tuple[str, str]] = []  # (file_path, top_level_root)
+    for path in doc_paths:
+        if os.path.isdir(path):
+            for root, _, names in os.walk(path):
+                for name in names:
+                    files.append((os.path.join(root, name), path))
+        else:
+            files.append((path, os.path.dirname(path)))
+
     docs = []
-    for p in doc_paths:
+    summary: Dict[str, List[str]] = {}
+    for p, root in files:
         if not os.path.exists(p):
             print(f"skip missing: {p}")
             continue
+        rel = os.path.relpath(p, root)
+        domain = rel.split(os.sep)[0]
+        base = os.path.splitext(os.path.basename(p))[0]
+        if base and base[0].isdigit():
+            base = base.split('_', 1)[-1]
+        subdomain = base.replace('_', ' ')
+        summary.setdefault(domain, []).append(subdomain)
         try:
-            if p.lower().endswith(".pdf"):
-                docs.extend(PyPDFLoader(p).load())
-            elif p.lower().endswith(".docx"):
-                docs.extend(Docx2txtLoader(p).load())
-            elif p.lower().endswith((".xlsx", ".xls")):
-                docs.extend(UnstructuredExcelLoader(p).load())
-            elif p.lower().endswith(".txt"):
-                docs.extend(TextLoader(p).load())
+            if p.lower().endswith(".pdf") and PyPDFLoader:
+                loaded = PyPDFLoader(p).load()
+            elif p.lower().endswith(".docx") and Docx2txtLoader:
+                loaded = Docx2txtLoader(p).load()
+            elif p.lower().endswith((".xlsx", ".xls")) and UnstructuredExcelLoader:
+                loaded = UnstructuredExcelLoader(p).load()
+            elif p.lower().endswith((".txt", ".json", ".md", ".jsonl")):
+                if p.lower().endswith((".txt", ".md")) and TextLoader:
+                    loaded = TextLoader(p).load()
+                elif p.lower().endswith(".jsonl"):
+                    loaded = []
+                    with open(p, "r", encoding="utf-8") as fh:
+                        for line in fh:
+                            line = line.strip()
+                            if not line:
+                                continue
+                            try:
+                                obj = json.loads(line)
+                            except Exception:
+                                obj = line
+                            loaded.append(
+                                Document(page_content=json.dumps(obj), metadata={})
+                            )
+                else:
+                    with open(p, "r", encoding="utf-8") as fh:
+                        loaded = [Document(page_content=fh.read(), metadata={})]
+            else:
+                print(f"unsupported format: {p}")
+                continue
+            for d in loaded:
+                d.metadata.setdefault('source', p)
+                d.metadata.setdefault('domain', domain)
+                d.metadata.setdefault('subdomain', subdomain)
+            docs.extend(loaded)
         except Exception as e:
             print(f"failed to load {p}: {e}")
 
@@ -189,10 +260,15 @@ def ingest_canonical_docs(doc_paths: List[str], persist_dir: str):
     splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=120)
     chunks = splitter.split_documents(docs)
     embeddings = _get_embeddings()
+    persist_dir = persist_dir or os.getenv("VECTORSTORE_DIR") or "vector_store"
     os.makedirs(persist_dir, exist_ok=True)
     try:
         db = Chroma.from_documents(chunks, embeddings, persist_directory=persist_dir)
         print(f"persisted {len(chunks)} chunks -> {persist_dir}")
+        for dom, subs in summary.items():
+            print(dom + "/")
+            for sub in sorted(set(subs)):
+                print(f"  - {sub}")
         return db
     except Exception as e:
         print(f"vector store creation failed: {e}")

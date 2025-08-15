@@ -14,10 +14,19 @@ def record_output(state: TwinState, agent: AgentName, output_key: str, output: D
 
 
 def _next_from_targets(state: TwinState, current: AgentName) -> Optional[AgentName]:
+    """Return the next agent in the target list, normalizing aliases."""
+
     if not state.target_agents:
         return None
+
+    def _normalize(agent: AgentName) -> AgentName:
+        return AgentName.MARKET if agent == AgentName.MARKET_INTEL else agent
+
+    normalized_targets = [_normalize(a) for a in state.target_agents]
+    current_norm = _normalize(current)
+
     try:
-        idx = state.target_agents.index(current)
+        idx = normalized_targets.index(current_norm)
         return state.target_agents[idx + 1] if idx + 1 < len(state.target_agents) else None
     except ValueError:
         # If current not in target list, just end
@@ -66,8 +75,8 @@ def strategy_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
         "analysis": analysis,
         "context_used": len((ctx or "").split("\n\n")),
     }
-    record_output(state, AgentName.strategy, "strategy_output", output, "Strategic analysis completed")
-    state.next_agent = _next_from_targets(state, AgentName.strategy)
+    record_output(state, AgentName.STRATEGY, "strategy_output", output, "Strategic analysis completed")
+    state.next_agent = _next_from_targets(state, AgentName.STRATEGY)
     return state
 
 def operations_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
@@ -81,8 +90,8 @@ def operations_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
         "analysis": analysis,
         "context_used": len((ctx or "").split("\n\n")),
     }
-    record_output(state, AgentName.operations, "operations_output", output, "Operations planning completed")
-    state.next_agent = _next_from_targets(state, AgentName.operations)
+    record_output(state, AgentName.OPERATIONS, "operations_output", output, "Operations planning completed")
+    state.next_agent = _next_from_targets(state, AgentName.OPERATIONS)
     return state
 
 def finance_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
@@ -96,8 +105,8 @@ def finance_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
         "analysis": analysis,
         "context_used": len((ctx or "").split("\n\n")),
     }
-    record_output(state, AgentName.finance, "finance_output", output, "Financial modeling completed")
-    state.next_agent = _next_from_targets(state, AgentName.finance)
+    record_output(state, AgentName.FINANCE, "finance_output", output, "Financial modeling completed")
+    state.next_agent = _next_from_targets(state, AgentName.FINANCE)
     return state
 
 def market_intel_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
@@ -111,8 +120,8 @@ def market_intel_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
         "analysis": analysis,
         "context_used": len((ctx or "").split("\n\n")),
     }
-    record_output(state, AgentName.market, "market_output", output, "Market intelligence gathered")
-    state.next_agent = _next_from_targets(state, AgentName.market)
+    record_output(state, AgentName.MARKET, "market_output", output, "Market intelligence gathered")
+    state.next_agent = _next_from_targets(state, AgentName.MARKET)
     return state
 
 def risk_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
@@ -126,8 +135,8 @@ def risk_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
         "analysis": analysis,
         "context_used": len((ctx or "").split("\n\n")),
     }
-    record_output(state, AgentName.risk, "risk_output", output, "Risk analysis completed")
-    state.next_agent = _next_from_targets(state, AgentName.risk)
+    record_output(state, AgentName.RISK, "risk_output", output, "Risk analysis completed")
+    state.next_agent = _next_from_targets(state, AgentName.RISK)
     return state
 
 def compliance_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
@@ -141,8 +150,8 @@ def compliance_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
         "analysis": analysis,
         "context_used": len((ctx or "").split("\n\n")),
     }
-    record_output(state, AgentName.compliance, "compliance_output", output, "Compliance framework outlined")
-    state.next_agent = _next_from_targets(state, AgentName.compliance)
+    record_output(state, AgentName.COMPLIANCE, "compliance_output", output, "Compliance framework outlined")
+    state.next_agent = _next_from_targets(state, AgentName.COMPLIANCE)
     return state
 
 def innovation_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
@@ -155,8 +164,64 @@ def innovation_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
         "analysis": analysis,
         "context_used": len((ctx or "").split("\n\n")),
     }
-    record_output(state, AgentName.innovation, "innovation_output", output, "Innovation roadmap prepared")
-    state.next_agent = _next_from_targets(state, AgentName.innovation)
+    record_output(state, AgentName.INNOVATION, "innovation_output", output, "Innovation roadmap prepared")
+    state.next_agent = _next_from_targets(state, AgentName.INNOVATION)
+    return state
+
+
+def media_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
+    q = state.question or ""
+    ctx = doc_store.query(f"media assets branding {q}")
+    analysis = enhance_with_llm(f"Media strategy and asset guidance for: {q}", ctx)
+    output = {
+        "asset_pipeline": "Placeholder",
+        "analysis": analysis,
+        "context_used": len((ctx or "").split("\n\n")),
+    }
+    record_output(state, AgentName.MEDIA, "media_output", output, "Media guidance completed")
+    state.next_agent = _next_from_targets(state, AgentName.MEDIA)
+    return state
+
+
+def qms_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
+    q = state.question or ""
+    ctx = doc_store.query(f"quality management system {q}")
+    analysis = enhance_with_llm(f"QMS and SOP alignment for: {q}", ctx)
+    output = {
+        "audit_focus": "Placeholder",
+        "analysis": analysis,
+        "context_used": len((ctx or "").split("\n\n")),
+    }
+    record_output(state, AgentName.QMS, "qms_output", output, "QMS review completed")
+    state.next_agent = _next_from_targets(state, AgentName.QMS)
+    return state
+
+
+def governance_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
+    q = state.question or ""
+    ctx = doc_store.query(f"governance decision policy {q}")
+    analysis = enhance_with_llm(f"Governance alignment for: {q}", ctx)
+    output = {
+        "policy_considerations": "Placeholder",
+        "analysis": analysis,
+        "context_used": len((ctx or "").split("\n\n")),
+    }
+    record_output(state, AgentName.GOVERNANCE, "governance_output", output, "Governance review completed")
+    state.next_agent = _next_from_targets(state, AgentName.GOVERNANCE)
+    return state
+
+
+def aemps_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
+    q = state.question or ""
+    ctx = doc_store.query(f"AEMPS EU-GMP {q}")
+    analysis = enhance_with_llm(f"AEMPS readiness assessment for: {q}", ctx)
+    output = {
+        "readiness_level": "Placeholder",
+        "analysis": analysis,
+        "context_used": len((ctx or "").split("\n\n")),
+    }
+    record_output(state, AgentName.AEMPS, "aemps_output", output, "AEMPS readiness assessed")
+    state.next_agent = _next_from_targets(state, AgentName.AEMPS)
     return state
 
 def finalize_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
@@ -169,15 +234,23 @@ def finalize_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
     rsk = state.risk_output or {}
     cmp_ = state.compliance_output or {}
     inn = state.innovation_output or {}
+    med = state.media_output or {}
+    qms = state.qms_output or {}
+    gov = state.governance_output or {}
+    aem = state.aemps_output or {}
 
     parts = [
-        f"🎯 Strategy: {strat.get('strategic_focus', 'N/A')} | {strat.get('timeline', '')}",
-        f"💰 Finance: ROI {fin.get('roi_projection', 'N/A')} | CAPEX {fin.get('capex_estimate', 'N/A')}",
-        f"⚙️ Operations: {ops.get('implementation_schedule', 'N/A')}",
-        f"📊 Market: {mkt.get('growth_projection', 'N/A')} | {mkt.get('market_opportunity', 'N/A')}",
-        f"⚠️ Risk: {rsk.get('risk_assessment', 'N/A')}",
-        f"📋 Compliance: {cmp_.get('timeline', 'N/A')} | {cmp_.get('regulatory_framework', 'N/A')}",
-        f"💡 Innovation: roadmap with {len(inn.get('initiatives', []))} initiatives",
+        f"🎯 Strategy ({strat.get('context_used', 0)} ctx): {strat.get('strategic_focus', 'N/A')} | {strat.get('timeline', '')}",
+        f"💰 Finance ({fin.get('context_used', 0)} ctx): ROI {fin.get('roi_projection', 'N/A')} | CAPEX {fin.get('capex_estimate', 'N/A')}",
+        f"⚙️ Operations ({ops.get('context_used', 0)} ctx): {ops.get('implementation_schedule', 'N/A')}",
+        f"📊 Market ({mkt.get('context_used', 0)} ctx): {mkt.get('growth_projection', 'N/A')} | {mkt.get('market_opportunity', 'N/A')}",
+        f"⚠️ Risk ({rsk.get('context_used', 0)} ctx): {rsk.get('risk_assessment', 'N/A')}",
+        f"📋 Compliance ({cmp_.get('context_used', 0)} ctx): {cmp_.get('timeline', 'N/A')} | {cmp_.get('regulatory_framework', 'N/A')}",
+        f"💡 Innovation ({inn.get('context_used', 0)} ctx): roadmap with {len(inn.get('initiatives', []))} initiatives",
+        f"🎥 Media ({med.get('context_used', 0)} ctx): {med.get('asset_pipeline', 'N/A')}",
+        f"🧪 QMS ({qms.get('context_used', 0)} ctx): {qms.get('audit_focus', 'N/A')}",
+        f"🧭 Governance ({gov.get('context_used', 0)} ctx): {gov.get('policy_considerations', 'N/A')}",
+        f"🏛️ AEMPS ({aem.get('context_used', 0)} ctx): {aem.get('readiness_level', 'N/A')}",
     ]
 
     state.final_answer = (
@@ -187,6 +260,39 @@ def finalize_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
     )
     state.finalize = True
     state.history.append(Message(role="System", content="Final synthesis completed"))
+    # Learning & alignment logging
+    try:
+        import json, datetime
+        if state.metadata.get("decision"):
+            record = {
+                "timestamp": datetime.datetime.utcnow().isoformat(),
+                "agent": state.current_agent.value if state.current_agent else "finalize",
+                "input_summary": state.question,
+                "decision": state.metadata.get("decision"),
+                "rationale": state.metadata.get("rationale", ""),
+                "evidence_refs": state.metadata.get("evidence_refs", []),
+                "outcomes": state.metadata.get("outcomes", []),
+                "followups": state.metadata.get("followups", []),
+            }
+            with open("data/governance/decision_register.jsonl", "a", encoding="utf-8") as fh:
+                fh.write(json.dumps(record) + "\n")
+            with open("data/governance/weekly_learning.md", "a", encoding="utf-8") as fh:
+                fh.write(f"- {record['timestamp']}: {record['decision']}\n")
+        if state.metadata.get("capa_issue"):
+            capa = {
+                "timestamp": datetime.datetime.utcnow().isoformat(),
+                "source_agent": state.current_agent.value if state.current_agent else "finalize",
+                "issue": state.metadata.get("capa_issue"),
+                "root_cause": state.metadata.get("root_cause", ""),
+                "corrective": state.metadata.get("corrective", ""),
+                "preventive": state.metadata.get("preventive", ""),
+                "status": state.metadata.get("status", "open"),
+                "owner": state.metadata.get("owner", "unassigned"),
+            }
+            with open("data/compliance/capa_log.jsonl", "a", encoding="utf-8") as fh:
+                fh.write(json.dumps(capa) + "\n")
+    except Exception:
+        pass
     # Optional: archive outputs into vector store for future retrieval
     if os.getenv("ARCHIVE_AGENT_OUTPUTS", "1").lower() in {"1", "true", "yes"}:
         try:

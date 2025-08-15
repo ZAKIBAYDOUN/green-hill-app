@@ -17,5 +17,15 @@
     "langchain-chroma",
     "chromadb",
     "sentence-transformers"
-  ]
+  ],
+  "studio": {
+    "ghc-dashboard": {
+      "graph": "ghc",
+      "public_url": "https://langgraph.app/digital-roots/ghc-dashboard",
+      "file_upload": ["pdf", "txt", "json"],
+      "question_input": true,
+      "agent_panel": true,
+      "final_summary": true
+    }
+  }
 }
