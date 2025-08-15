@@ -7,7 +7,8 @@ import sys
 sys.path.append('/workspaces/green-hill-app')
 
 from app.models import TwinState, AgentName, Message
-from app.ghc_twin import app
+from app.ghc_twin import app, intake_node
+import re
 
 
 def test_minimal_invoke_investor():
@@ -26,6 +27,25 @@ def test_agent_enums_values():
     assert AgentName.COMPLIANCE.value == "compliance"
     assert AgentName.INNOVATION.value == "innovation"
     assert AgentName.GREEN_HILL.value == "green_hill_gpt"
+
+
+def test_intake_history_message():
+    state = TwinState()
+    out = intake_node(state)
+    assert isinstance(out.history[0], Message)
+
+
+def test_market_intel_alias_routes_to_market():
+    state = TwinState(question="Market?", target_agent=AgentName.MARKET_INTEL)
+    result = app.invoke(state)
+    assert result["finalize"] is True
+    assert result.get("market_output")
+
+
+def test_final_summary_has_context_counts():
+    state = TwinState(question="ROI?", source_type="public")
+    result = app.invoke(state)
+    assert re.search(r"🎯 Strategy \(\d+ ctx\)", result["final_answer"])
 
 
 if __name__ == "__main__":

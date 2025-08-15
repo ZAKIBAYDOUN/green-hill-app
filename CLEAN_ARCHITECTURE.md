@@ -58,7 +58,7 @@ Following GPT-5 Pro recommendations, we've implemented a clean, scalable archite
 OPENAI_API_KEY=sk-your-openai-api-key-here
 OPENAI_EMBED_MODEL=text-embedding-3-large
 OPENAI_CHAT_MODEL=gpt-4o-mini
-VECTOR_STORE_DIR=vector_store
+VECTORSTORE_DIR=vector_store
 
 # Optional: Green Hill GPT integration
 # GREEN_HILL_URL=https://api.greenhillgpt.com/query

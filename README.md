@@ -25,7 +25,7 @@ A multi-agent LangGraph application with retrieval and memo synthesis. Use the S
 ```env
 OPENAI_API_KEY=sk-...
 EMBEDDING_BACKEND=openai
-VECTOR_STORE_DIR=/data/vectorstore
+VECTORSTORE_DIR=/data/vectorstore
 ALLOWED_ORIGINS=*
 ```
 
@@ -50,7 +50,7 @@ Open: http://SERVER_IP/health and http://SERVER_IP:8501
 
 - Ingest tab
   - Paste text (one line per item) and ingest to the vector store
-  - Uses VECTOR_STORE_DIR (default: vector_store)
+  - Uses VECTORSTORE_DIR (default: vector_store)
 
 - Status tab
   - Shows vector store availability and allows a quick search
@@ -72,7 +72,7 @@ Open: http://SERVER_IP/health and http://SERVER_IP:8501
 - One-off ingestion (files):
   - Place PDFs/DOCX/XLSX/TXT under docs/
   - python app/ingest.py --source docs --out vector_store
-  - Set VECTOR_STORE_DIR=vector_store
+  - Set VECTORSTORE_DIR=vector_store
 
 - Runtime additions (programmatic):
   - app.document_store.DocumentStore.add_texts([...])
@@ -80,7 +80,7 @@ Open: http://SERVER_IP/health and http://SERVER_IP:8501
 
 ## Environment
 
-- VECTOR_STORE_DIR=vector_store
+- VECTORSTORE_DIR=vector_store
 - EMBEDDING_BACKEND=hf | openai (default: hf)
 - HUGGINGFACE_EMBED_MODEL=sentence-transformers/all-MiniLM-L6-v2
 - OPENAI_EMBED_MODEL=text-embedding-3-small (if EMBEDDING_BACKEND=openai)
@@ -100,7 +100,7 @@ Open: http://SERVER_IP/health and http://SERVER_IP:8501
 - UI/health doesn’t load in a Codespace/container:
   - Ensure ports (8501 for Streamlit, 8000 for API) are forwarded and public
 - Vector store says “No vector store available”:
-  - Create it via the Ingest tab or run the ingester; confirm VECTOR_STORE_DIR points to the directory
+  - Create it via the Ingest tab or run the ingester; confirm VECTORSTORE_DIR points to the directory
 - LLM calls fail:
   - Set OPENAI_API_KEY, and choose OPENAI_CHAT_MODEL (e.g., gpt-4o-mini)
 

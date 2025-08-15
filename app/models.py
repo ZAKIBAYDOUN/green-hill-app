@@ -6,14 +6,27 @@ from pydantic import BaseModel, Field
 
 
 class AgentName(str, Enum):
-    strategy = "Strategy"
-    operations = "Operations"
-    finance = "Finance"
-    market = "Market"
-    risk = "Risk"
-    compliance = "Compliance"
-    innovation = "Innovation"
-    green_hill = "GreenHillGPT"
+    """Canonical agent identifiers used throughout the app.
+
+    Member names are uppercase while values are the lowercase identifiers
+    referenced in tests and persisted data. The ``MARKET_INTEL`` alias is
+    provided for backwards compatibility with older references to the market
+    intelligence agent.
+    """
+
+    STRATEGY = "strategy"
+    OPERATIONS = "operations"
+    FINANCE = "finance"
+    MARKET = "market"
+    MARKET_INTEL = "market_intel"
+    RISK = "risk"
+    COMPLIANCE = "compliance"
+    INNOVATION = "innovation"
+    MEDIA = "media"
+    QMS = "qms"
+    GOVERNANCE = "governance"
+    AEMPS = "aemps"
+    GREEN_HILL = "green_hill_gpt"
 
 
 class Message(BaseModel):
@@ -48,6 +61,10 @@ class TwinState(BaseModel):
     risk_output: Optional[Dict[str, Any]] = None
     compliance_output: Optional[Dict[str, Any]] = None
     innovation_output: Optional[Dict[str, Any]] = None
+    media_output: Optional[Dict[str, Any]] = None
+    qms_output: Optional[Dict[str, Any]] = None
+    governance_output: Optional[Dict[str, Any]] = None
+    aemps_output: Optional[Dict[str, Any]] = None
     green_hill_response: Optional[Dict[str, Any]] = None
 
     # Orchestration

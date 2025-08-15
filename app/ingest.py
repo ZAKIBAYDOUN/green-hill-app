@@ -115,7 +115,7 @@ if __name__ == "__main__":
         success = ingest_docs(args.source, args.out, args.model)
         if success:
             print("\n🎯 Next steps:")
-            print(f"1. Set VECTOR_STORE_DIR={args.out}")
+            print(f"1. Set VECTORSTORE_DIR={args.out}")
             print("2. Deploy with vector store available")
             print("3. Test document queries")
         else:

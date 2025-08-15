@@ -64,7 +64,7 @@ HUGGINGFACE_EMBED_MODEL=sentence-transformers/all-MiniLM-L6-v2
 # OPENAI_EMBED_MODEL=text-embedding-3-small
 
 # Optional RAG bootstrap
-VECTOR_STORE_DIR=vector_store
+VECTORSTORE_DIR=vector_store
 # VECTOR_STORE_URL=https://example.com/chroma_store.zip
 
 # Optional LangSmith tracing

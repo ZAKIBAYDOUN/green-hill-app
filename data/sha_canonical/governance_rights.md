@@ -1,0 +1,2 @@
+# Governance Rights
+- Placeholder rights
