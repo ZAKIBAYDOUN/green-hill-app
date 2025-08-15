@@ -111,6 +111,8 @@ def intake_node(state: TwinState) -> TwinState:
     - If ocs_feed: operations and compliance.
     """
     st = state
+    if st.question:
+        st.history.append(Message(role="User", content=st.question))
     st.history.append(Message(role="System", content="Intake processed"))
     targets = st.target_agents or []
     stype = (st.source_type or "public").lower()

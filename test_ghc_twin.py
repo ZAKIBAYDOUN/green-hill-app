@@ -29,10 +29,12 @@ def test_agent_enums_values():
     assert AgentName.GREEN_HILL.value == "green_hill_gpt"
 
 
-def test_intake_history_message():
-    state = TwinState()
+def test_intake_records_user_question():
+    state = TwinState(question="Hello")
     out = intake_node(state)
-    assert isinstance(out.history[0], Message)
+    assert out.history[0].role == "User"
+    assert out.history[0].content == "Hello"
+    assert out.history[1].role == "System"
 
 
 def test_market_intel_alias_routes_to_market():
