@@ -70,7 +70,7 @@ Open: http://SERVER_IP/health and http://SERVER_IP:8501
 ## Documents & Retrieval
 
 - One-off ingestion (files):
-  - Place PDFs/DOCX/XLSX/TXT under docs/
+  - Place PDFs/DOCX/XLSX/TXT/MD/JSON/JSONL under docs/
   - python app/ingest.py --source docs --out vector_store
   - Set VECTOR_STORE_DIR=vector_store
 
