@@ -1,13 +1,24 @@
 #!/usr/bin/env python3
 """
 Continuous testing script for Green Hill Canarias multi-agent system
-Tests both simple and multi-agent modes with Green Hill GPT integration
+Tests both simple and multi-agent modes with Green Hill GPT integration.
+
+The functionality here is intended for manual execution rather than as part
+of the automated unit test suite. Pytest would otherwise collect the helper
+function ``test_graph_mode`` and attempt to resolve its ``mode`` parameter as a
+fixture, resulting in errors. Mark the entire module as skipped so that
+standard ``pytest`` runs do not execute it.
 """
 
 import os
 import time
 import json
 from typing import Dict, Any
+import pytest
+
+# Skip this module during normal pytest runs
+pytestmark = pytest.mark.skip(reason="integration test script")
+
 from main import create_simple_graph, create_multi_agent_graph
 
 # Test scenarios for continuous validation

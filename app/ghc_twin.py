@@ -22,20 +22,31 @@ def classify_request(state: TwinState) -> List[AgentName]:
     st = (state.source_type or "public").lower()
     if st == "master":
         return [
-            AgentName.strategy, AgentName.finance, AgentName.operations,
-            AgentName.market, AgentName.risk, AgentName.compliance, AgentName.innovation,
-            AgentName.green_hill,
+            AgentName.STRATEGY,
+            AgentName.FINANCE,
+            AgentName.OPERATIONS,
+            AgentName.MARKET,
+            AgentName.RISK,
+            AgentName.COMPLIANCE,
+            AgentName.INNOVATION,
+            AgentName.GREEN_HILL,
         ]
     if st in {"shareholder", "investor"}:
-        return [AgentName.strategy, AgentName.finance, AgentName.market, AgentName.risk, AgentName.green_hill]
+        return [
+            AgentName.STRATEGY,
+            AgentName.FINANCE,
+            AgentName.MARKET,
+            AgentName.RISK,
+            AgentName.GREEN_HILL,
+        ]
     if st in {"supplier", "provider"}:
-        return [AgentName.operations, AgentName.compliance]
+        return [AgentName.OPERATIONS, AgentName.COMPLIANCE]
     if st == "public":
-        return [AgentName.market, AgentName.strategy]
+        return [AgentName.MARKET, AgentName.STRATEGY]
     if st == "ocs_feed":
-        return [AgentName.operations, AgentName.compliance]
+        return [AgentName.OPERATIONS, AgentName.COMPLIANCE]
     if st == "web_source":
-        return [AgentName.market, AgentName.risk]
+        return [AgentName.MARKET, AgentName.RISK]
     return []
 
 
@@ -87,14 +98,14 @@ def intake_node(state: TwinState) -> TwinState:
     targets = st.target_agents or []
     stype = (st.source_type or "public").lower()
     if st.payload_ref and not st.question:
-        if AgentName.innovation not in targets:
-            targets.append(AgentName.innovation)
-        if AgentName.operations not in targets:
-            targets.append(AgentName.operations)
+        if AgentName.INNOVATION not in targets:
+            targets.append(AgentName.INNOVATION)
+        if AgentName.OPERATIONS not in targets:
+            targets.append(AgentName.OPERATIONS)
     elif stype == "web_source":
-        targets = targets or [AgentName.market, AgentName.risk]
+        targets = targets or [AgentName.MARKET, AgentName.RISK]
     elif stype == "ocs_feed":
-        targets = targets or [AgentName.operations, AgentName.compliance]
+        targets = targets or [AgentName.OPERATIONS, AgentName.COMPLIANCE]
     st.target_agents = targets
     # If no question, allow flow to digital_twin which will fetch context & route
     return st
@@ -106,14 +117,14 @@ def router(state):
     if st.finalize:
         return END
     m = {
-        AgentName.strategy: "strategy",
-        AgentName.finance: "finance",
-        AgentName.operations: "operations",
-        AgentName.market: "market",
-        AgentName.risk: "risk",
-        AgentName.compliance: "compliance",
-        AgentName.innovation: "innovation",
-        AgentName.green_hill: "green_hill",
+        AgentName.STRATEGY: "strategy",
+        AgentName.FINANCE: "finance",
+        AgentName.OPERATIONS: "operations",
+        AgentName.MARKET: "market",
+        AgentName.RISK: "risk",
+        AgentName.COMPLIANCE: "compliance",
+        AgentName.INNOVATION: "innovation",
+        AgentName.GREEN_HILL: "green_hill",
     }
     # If no explicit next agent but not finalized, go to finalize node
     if st.next_agent is None and not st.finalize:
