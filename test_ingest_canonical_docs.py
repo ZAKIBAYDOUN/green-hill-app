@@ -53,13 +53,16 @@ def test_ingests_md_and_jsonl(monkeypatch, tmp_path):
     lines = [
         {"text": "line one", "domain": "alpha", "subdomain": "a"},
         {"text": "line two", "domain": "beta", "subdomain": "b"},
+        "just a string",
     ]
-    jsonl_path.write_text("\n".join(json.dumps(l) for l in lines), encoding="utf-8")
+    jsonl_path.write_text(
+        "\n".join(json.dumps(l) for l in lines), encoding="utf-8"
+    )
 
     db = document_store.ingest_canonical_docs([str(md_path), str(jsonl_path)], persist_dir=str(tmp_path / "store"))
 
     assert isinstance(db, DummyChroma)
-    assert len(db.docs) == 3
+    assert len(db.docs) == 4
 
     sources = [d.metadata.get("source") for d in db.docs]
     assert str(md_path) in sources
@@ -67,10 +70,12 @@ def test_ingests_md_and_jsonl(monkeypatch, tmp_path):
     assert md_docs[0].metadata["type"] == "md"
 
     jsonl_docs = [d for d in db.docs if d.metadata.get("source") == str(jsonl_path)]
-    assert len(jsonl_docs) == 2
+    assert len(jsonl_docs) == 3
     assert jsonl_docs[0].metadata["domain"] == "alpha"
     assert jsonl_docs[0].metadata["subdomain"] == "a"
     assert jsonl_docs[0].metadata["type"] == "jsonl"
     assert jsonl_docs[1].metadata["domain"] == "beta"
     assert jsonl_docs[1].metadata["subdomain"] == "b"
     assert jsonl_docs[1].metadata["type"] == "jsonl"
+    assert jsonl_docs[2].page_content == "just a string"
+    assert jsonl_docs[2].metadata["type"] == "jsonl"

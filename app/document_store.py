@@ -203,13 +203,23 @@ def ingest_canonical_docs(doc_paths: List[str], persist_dir: str):
                             try:
                                 obj = json.loads(line)
                             except json.JSONDecodeError:
+                                print(f"skip malformed jsonl line: {line[:80]}")
                                 continue
-                            text = obj.get("text") or obj.get("content") or json.dumps(obj)
-                            meta = {"source": p, "type": "jsonl"}
-                            for key in ("domain", "subdomain"):
-                                if key in obj:
-                                    meta[key] = obj[key]
-                            docs.append(Document(page_content=text, metadata=meta))
+                            if isinstance(obj, dict):
+                                text = obj.get("text") or obj.get("content") or json.dumps(obj)
+                                meta = {"source": p, "type": "jsonl"}
+                                for key in ("domain", "subdomain"):
+                                    if key in obj:
+                                        meta[key] = obj[key]
+                                docs.append(Document(page_content=text, metadata=meta))
+                            else:
+                                print(f"skip non-object jsonl line: {line[:80]}")
+                                docs.append(
+                                    Document(
+                                        page_content=str(obj),
+                                        metadata={"source": p, "type": "jsonl"},
+                                    )
+                                )
                 else:
                     try:
                         loaded = TextLoader(p).load()
