@@ -2,11 +2,13 @@
 
 Self-contained: no imports from root-level modules.
 """
+import json
 import os
 import uuid
 from typing import List, Optional, Dict, Any
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.docstore.document import Document
 
 
 def _get_embeddings():
@@ -189,8 +191,36 @@ def ingest_canonical_docs(doc_paths: List[str], persist_dir: str):
                 docs.extend(Docx2txtLoader(p).load())
             elif p.lower().endswith((".xlsx", ".xls")):
                 docs.extend(UnstructuredExcelLoader(p).load())
-            elif p.lower().endswith(".txt"):
-                docs.extend(TextLoader(p).load())
+            elif p.lower().endswith((".txt", ".json", ".md", ".jsonl")):
+                ext = os.path.splitext(p)[1].lstrip(".").lower()
+                if ext == "jsonl":
+                    with open(p, "r", encoding="utf-8") as f:
+                        for line in f:
+                            line = line.strip()
+                            if not line:
+                                continue
+                            try:
+                                obj = json.loads(line)
+                            except json.JSONDecodeError:
+                                continue
+                            text = obj.get("text") or obj.get("content") or json.dumps(obj)
+                            meta = {"source": p, "type": "jsonl"}
+                            for key in ("domain", "subdomain"):
+                                if key in obj:
+                                    meta[key] = obj[key]
+                            docs.append(Document(page_content=text, metadata=meta))
+                else:
+                    try:
+                        loaded = TextLoader(p).load()
+                        for d in loaded:
+                            d.metadata.setdefault("type", ext)
+                        docs.extend(loaded)
+                    except Exception:
+                        with open(p, "r", encoding="utf-8") as f:
+                            text = f.read()
+                        docs.append(
+                            Document(page_content=text, metadata={"source": p, "type": ext})
+                        )
         except Exception as e:
             print(f"failed to load {p}: {e}")
 
