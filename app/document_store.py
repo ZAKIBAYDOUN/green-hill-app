@@ -191,6 +191,7 @@ def ingest_canonical_docs(doc_paths: List[str], persist_dir: str):
                 docs.extend(Docx2txtLoader(p).load())
             elif p.lower().endswith((".xlsx", ".xls")):
                 docs.extend(UnstructuredExcelLoader(p).load())
+            # Treat Markdown and JSON/JSONL as text-based files
             elif p.lower().endswith((".txt", ".json", ".md", ".jsonl")):
                 ext = os.path.splitext(p)[1].lstrip(".").lower()
                 if ext == "jsonl":
