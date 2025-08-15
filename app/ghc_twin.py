@@ -3,7 +3,7 @@ import os
 from typing import List
 from langgraph.graph import StateGraph, START, END
 from app.models import TwinState, AgentName, Message
-from app.document_store import get_document_store
+from app.document_store import get_document_store, DocumentStore
 from app.agents import (
     strategy_node,
     finance_node,
@@ -69,7 +69,7 @@ def classify_request(state: TwinState) -> List[AgentName]:
     return []
 
 
-def digital_twin(state: TwinState) -> TwinState:
+def digital_twin(state: TwinState, store: DocumentStore) -> TwinState:
     # Validate input
     if not state.question:
         state.finalize = True
@@ -78,9 +78,7 @@ def digital_twin(state: TwinState) -> TwinState:
         )
         return state
 
-    # Load vector store and attach context
-    persist_dir = os.getenv("VECTORSTORE_DIR", "vector_store")
-    store = get_document_store(persist_dir)
+    # Attach context from shared vector store
     if store and store.is_available():
         ctx = store.query(state.question, k=5)
         state.context["retrieved_docs"] = ctx.split("\n\n") if ctx else []
@@ -176,7 +174,7 @@ def build_graph():
         return _wrapped
     # Nodes
     g.add_node("intake", wrap(intake_node))
-    g.add_node("digital_twin", wrap(digital_twin))
+    g.add_node("digital_twin", wrap_with_store(digital_twin))
     g.add_node("strategy", wrap_with_store(strategy_node))
     g.add_node("finance", wrap_with_store(finance_node))
     g.add_node("operations", wrap_with_store(operations_node))
