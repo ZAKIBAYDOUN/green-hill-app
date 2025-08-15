@@ -27,10 +27,22 @@ def _get_embeddings():
 
 
 class DocumentStore:
-    """Thin wrapper over Chroma vector store with a simple query() API."""
+    """Thin wrapper over Chroma vector store with a simple query() API.
 
-    def __init__(self, persist_dir: str):
-        self.persist_dir = persist_dir
+    Parameters
+    ----------
+    persist_dir: Optional[str]
+        Directory to persist the vector store. If not provided, the
+        ``VECTORSTORE_DIR`` environment variable is used. As a final
+        fallback, ``"vector_store"`` is chosen. This allows the document
+        store to be instantiated without explicit configuration which is
+        useful in tests and simple deployments.
+    """
+
+    def __init__(self, persist_dir: Optional[str] = None):
+        self.persist_dir = (
+            persist_dir or os.getenv("VECTORSTORE_DIR") or "vector_store"
+        )
         self.vectordb = None
         self._try_load()
 
