@@ -172,10 +172,10 @@ def ingest_canonical_docs(
     """Recursively ingest files into a Chroma vector store.
 
     Each document is tagged with ``domain`` and ``subdomain`` metadata fields.
-    ``domain`` is derived from the immediate parent directory and ``subdomain``
-    from the filename (numeric prefixes like ``01_`` are stripped). ``persist_dir``
-    defaults to the value of the ``VECTORSTORE_DIR`` environment variable or
-    ``"vector_store"``.
+    ``domain`` is derived from the top-level folder relative to the provided
+    ``doc_paths`` and ``subdomain`` from the filename (numeric prefixes like
+    ``01_`` are stripped). ``persist_dir`` defaults to the value of the
+    ``VECTORSTORE_DIR`` environment variable or ``"vector_store"``.
     """
     try:
         from langchain_community.document_loaders import (
@@ -192,22 +192,23 @@ def ingest_canonical_docs(
         print(f"Missing ingestion deps: {e}")
         return None
 
-    files: List[str] = []
+    files: List[tuple[str, str]] = []  # (file_path, top_level_root)
     for path in doc_paths:
         if os.path.isdir(path):
             for root, _, names in os.walk(path):
                 for name in names:
-                    files.append(os.path.join(root, name))
+                    files.append((os.path.join(root, name), path))
         else:
-            files.append(path)
+            files.append((path, os.path.dirname(path)))
 
     docs = []
     summary: Dict[str, List[str]] = {}
-    for p in files:
+    for p, root in files:
         if not os.path.exists(p):
             print(f"skip missing: {p}")
             continue
-        domain = os.path.basename(os.path.dirname(p))
+        rel = os.path.relpath(p, root)
+        domain = rel.split(os.sep)[0]
         base = os.path.splitext(os.path.basename(p))[0]
         if base and base[0].isdigit():
             base = base.split('_', 1)[-1]

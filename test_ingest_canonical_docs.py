@@ -34,3 +34,22 @@ def test_recursive_ingest_with_domain_metadata(tmp_path, monkeypatch):
     subdomains = {m.get("subdomain") for m in data["metadatas"]}
     assert domains == {"alpha", "beta"}
     assert subdomains == {"a", "b"}
+
+
+def test_nested_folder_uses_top_level_domain(tmp_path, monkeypatch):
+    """Files in nested subfolders should inherit the top-level domain."""
+    root = tmp_path / "docs"
+    nested_dir = root / "gamma" / "sub" / "deep"
+    nested_dir.mkdir(parents=True)
+    (nested_dir / "03_deep.txt").write_text("content", encoding="utf-8")
+
+    store = tmp_path / "vs"
+    monkeypatch.setenv("VECTORSTORE_DIR", str(store))
+    monkeypatch.setattr(
+        "app.document_store._get_embeddings", lambda: DummyEmbeddings()
+    )
+
+    db = ingest_canonical_docs([str(root)])
+    assert db is not None
+    metas = db.get(include=["metadatas"])["metadatas"]
+    assert any(m.get("domain") == "gamma" and m.get("subdomain") == "deep" for m in metas)
