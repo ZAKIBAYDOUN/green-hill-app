@@ -212,7 +212,8 @@ def ingest_canonical_docs(
         domain = rel.split(os.sep)[0]
         base = os.path.splitext(os.path.basename(p))[0]
         if base and base[0].isdigit():
-            base = base.split('_', 1)[-1]
+        # Strip leading numeric prefix followed by underscore, e.g., "01_file" -> "file"
+        base = re.sub(r'^\d+_', '', base)
         subdomain = base.replace('_', ' ')
         summary.setdefault(domain, []).append(subdomain)
         try:
