@@ -214,12 +214,6 @@ def ingest_canonical_docs(doc_paths: List[str], persist_dir: str):
                                 docs.append(Document(page_content=text, metadata=meta))
                             else:
                                 print(f"skip non-object jsonl line: {line[:80]}")
-                                docs.append(
-                                    Document(
-                                        page_content=str(obj),
-                                        metadata={"source": p, "type": "jsonl"},
-                                    )
-                                )
                 else:
                     try:
                         loaded = TextLoader(p).load()
