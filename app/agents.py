@@ -266,7 +266,7 @@ def finalize_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
         if state.metadata.get("decision"):
             record = {
                 "timestamp": datetime.datetime.utcnow().isoformat(),
-                "agent": state.current_agent.value if state.current_agent else "finalize",
+                "agent": getattr(state.current_agent, "value", "finalize"),
                 "input_summary": state.question,
                 "decision": state.metadata.get("decision"),
                 "rationale": state.metadata.get("rationale", ""),
