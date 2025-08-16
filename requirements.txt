@@ -1,0 +1,7 @@
+langchain
+langchain-openai
+langchain-chroma
+langchain-text-splitters
+pypdf
+tqdm
+docx2txt
