@@ -5,6 +5,7 @@ use OpenAI embeddings (requires OPENAI_API_KEY). Ensure the same backend/model i
 used for ingestion and querying to maintain vector space consistency.
 """
 import os
+import json
 from typing import List, Optional
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.docstore.document import Document
@@ -67,6 +68,28 @@ def load_documents(doc_paths: List[str]) -> List[Document]:
                     page_content=text,
                     metadata={"source": doc_path, "type": "txt"}
                 ))
+
+            elif doc_path.endswith('.json'):
+                # Load JSON files containing objects with metadata
+                with open(doc_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+
+                # Support both list of objects and single object
+                items = data if isinstance(data, list) else [data]
+
+                for obj in items:
+                    # Use "content" field if present, otherwise serialize obj
+                    content = obj.get("content") if isinstance(obj, dict) else None
+                    if content is None:
+                        content = json.dumps(obj)
+
+                    meta = {"source": doc_path, "type": "json"}
+                    if isinstance(obj, dict):
+                        for key in ("domain", "subdomain"):
+                            if key in obj:
+                                meta[key] = obj[key]
+
+                    documents.append(Document(page_content=content, metadata=meta))
                 
         except Exception as e:
             print(f"Error loading {doc_path}: {e}")
