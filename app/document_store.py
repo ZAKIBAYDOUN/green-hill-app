@@ -41,7 +41,10 @@ class DocumentStore:
 
     def __init__(self, persist_dir: Optional[str] = None):
         self.persist_dir = (
-            persist_dir or os.getenv("VECTORSTORE_DIR") or "vector_store"
+            persist_dir
+            or os.getenv("VECTORSTORE_DIR")
+            or os.getenv("VECTOR_STORE_DIR")
+            or "vector_store"
         )
         self.vectordb = None
         self._try_load()

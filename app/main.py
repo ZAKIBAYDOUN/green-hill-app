@@ -35,81 +35,81 @@ def create_app() -> StateGraph:
     workflow = StateGraph(TwinState)
     
     # Add all agent nodes with document store injection
-    workflow.add_node("strategy", create_agent_wrapper(strategy_node, doc_store))
-    workflow.add_node("operations", create_agent_wrapper(operations_node, doc_store))
-    workflow.add_node("finance", create_agent_wrapper(finance_node, doc_store))
-    workflow.add_node("market_intel", create_agent_wrapper(market_intel_node, doc_store))
-    workflow.add_node("risk", create_agent_wrapper(risk_node, doc_store))
-    workflow.add_node("compliance", create_agent_wrapper(compliance_node, doc_store))
-    workflow.add_node("innovation", create_agent_wrapper(innovation_node, doc_store))
+    workflow.add_node(AgentName.STRATEGY.value, create_agent_wrapper(strategy_node, doc_store))
+    workflow.add_node(AgentName.OPERATIONS.value, create_agent_wrapper(operations_node, doc_store))
+    workflow.add_node(AgentName.FINANCE.value, create_agent_wrapper(finance_node, doc_store))
+    workflow.add_node(AgentName.MARKET_INTEL.value, create_agent_wrapper(market_intel_node, doc_store))
+    workflow.add_node(AgentName.RISK.value, create_agent_wrapper(risk_node, doc_store))
+    workflow.add_node(AgentName.COMPLIANCE.value, create_agent_wrapper(compliance_node, doc_store))
+    workflow.add_node(AgentName.INNOVATION.value, create_agent_wrapper(innovation_node, doc_store))
     workflow.add_node("finalize", create_agent_wrapper(finalize_node, doc_store))
     
     # Set entry point
-    workflow.set_entry_point("strategy")
+    workflow.set_entry_point(AgentName.STRATEGY.value)
     
     # Add edges with routing logic
     workflow.add_conditional_edges(
-        "strategy",
+        AgentName.STRATEGY.value,
         router_logic,
         {
-            "operations": "operations",
+            AgentName.OPERATIONS.value: AgentName.OPERATIONS.value,
             "finalize": "finalize",
             END: END
         }
     )
     
     workflow.add_conditional_edges(
-        "operations", 
+        AgentName.OPERATIONS.value,
         router_logic,
         {
-            "finance": "finance",
+            AgentName.FINANCE.value: AgentName.FINANCE.value,
             "finalize": "finalize",
             END: END
         }
     )
     
     workflow.add_conditional_edges(
-        "finance",
+        AgentName.FINANCE.value,
         router_logic,
         {
-            "market_intel": "market_intel", 
+            AgentName.MARKET_INTEL.value: AgentName.MARKET_INTEL.value,
             "finalize": "finalize",
             END: END
         }
     )
     
     workflow.add_conditional_edges(
-        "market_intel",
+        AgentName.MARKET_INTEL.value,
         router_logic,
         {
-            "risk": "risk",
-            "finalize": "finalize", 
-            END: END
-        }
-    )
-    
-    workflow.add_conditional_edges(
-        "risk",
-        router_logic,
-        {
-            "compliance": "compliance",
+            AgentName.RISK.value: AgentName.RISK.value,
             "finalize": "finalize",
             END: END
         }
     )
     
     workflow.add_conditional_edges(
-        "compliance",
+        AgentName.RISK.value,
         router_logic,
         {
-            "innovation": "innovation",
+            AgentName.COMPLIANCE.value: AgentName.COMPLIANCE.value,
             "finalize": "finalize",
             END: END
         }
     )
     
     workflow.add_conditional_edges(
-        "innovation", 
+        AgentName.COMPLIANCE.value,
+        router_logic,
+        {
+            AgentName.INNOVATION.value: AgentName.INNOVATION.value,
+            "finalize": "finalize",
+            END: END
+        }
+    )
+    
+    workflow.add_conditional_edges(
+        AgentName.INNOVATION.value,
         router_logic,
         {
             "finalize": "finalize",
