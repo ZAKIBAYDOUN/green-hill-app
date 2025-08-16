@@ -124,7 +124,7 @@ def index():
     return render_template_string(HTML_TEMPLATE)
 
 @app.route('/test', methods=['POST'])
-def test_agent():
+def run_agent():
     try:
         data = request.json
         question = data.get('question', 'What is the strategic plan?')

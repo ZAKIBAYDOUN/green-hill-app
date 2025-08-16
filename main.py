@@ -30,8 +30,49 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime
 import json
 
-from ghc_complete import build_graph, query_documents
-from ghc_document_system import DocumentStore
+"""The orchestrator relies on two optional internal modules:
+`ghc_complete` provides the LangGraph implementation while
+`ghc_document_system` exposes a document store.  These modules are not
+distributed with the open repository, so importing them may fail when the
+project is executed in a clean environment.  We catch the ImportError here and
+fallback to graceful degradation so that the rest of the application (and the
+tests) can still run.  A short guide on how to obtain these modules is included
+in the README."""
+
+try:  # pragma: no cover - executed only when optional deps are available
+    from ghc_complete import build_graph, query_documents
+    HAS_GHC_COMPLETE = True
+except ImportError:  # pragma: no cover - graceful fallback
+    HAS_GHC_COMPLETE = False
+
+    class _DummyGraph:
+        def invoke(self, *args, **kwargs):  # pragma: no cover - simple stub
+            raise RuntimeError(
+                "ghc_complete module not installed. Install it to enable multi-agent analysis."
+            )
+
+    def build_graph():  # pragma: no cover - graceful fallback
+        logging.warning(
+            "Optional dependency 'ghc_complete' not found. Using dummy graph; features are disabled."
+        )
+        return _DummyGraph()
+
+    def query_documents(*args, **kwargs):  # pragma: no cover - graceful fallback
+        raise RuntimeError(
+            "ghc_complete module not installed. Install it to enable document querying."
+        )
+
+try:  # pragma: no cover - executed only when optional deps are available
+    from ghc_document_system import DocumentStore
+    HAS_GHC_DOCUMENT_SYSTEM = True
+except ImportError:  # pragma: no cover - graceful fallback
+    HAS_GHC_DOCUMENT_SYSTEM = False
+
+    class DocumentStore:  # pragma: no cover - simple stub
+        def __init__(self, *args, **kwargs):
+            logging.warning(
+                "Optional dependency 'ghc_document_system' not found. Document access is disabled."
+            )
 
 # Configure logging
 logging.basicConfig(
@@ -48,9 +89,16 @@ class GreenHillOrchestrator:
     
     def __init__(self):
         """Initialize orchestrator with aligned canonical document system"""
+        # Build graph/document store (may be dummy implementations if modules missing)
         self.graph = build_graph()
         self.document_store = DocumentStore()
         self.session_log = []
+
+        if not HAS_GHC_COMPLETE or not HAS_GHC_DOCUMENT_SYSTEM:
+            logger.warning(
+                "Running in degraded mode – optional GHC modules missing. See README for setup instructions."
+            )
+
         logger.info("🎯 Green Hill Orchestrator initialized with 9 canonical documents")
         logger.info("🔬 All agents granted full autonomy for investigation and analysis")
     
@@ -120,10 +168,15 @@ class GreenHillOrchestrator:
     async def process_single_agent_query(self, question: str, agent_type: str) -> Dict[str, Any]:
         """Process question with a single agent using full autonomy"""
         try:
+            if not HAS_GHC_COMPLETE:
+                raise RuntimeError(
+                    "query_documents is unavailable – install 'ghc_complete' to enable document querying."
+                )
+
             logger.info(f"🤖 {agent_type.upper()} Agent: Processing query with full autonomy")
-            
+
             result = query_documents(question, agent_type, agent_type)
-            
+
             # Log the analysis
             log_entry = {
                 'timestamp': datetime.now().isoformat(),
@@ -137,9 +190,9 @@ class GreenHillOrchestrator:
                 'response_length': len(result.get('documents', '')),
                 'sources_count': len(result.get('sources', []))
             }
-            
+
             self.session_log.append(log_entry)
-            
+
             return {
                 'agent': agent_type,
                 'success': result.get('success', False),
@@ -152,7 +205,7 @@ class GreenHillOrchestrator:
                     'analysis_authority': result.get('analysis_authority', 'unknown')
                 }
             }
-            
+
         except Exception as e:
             logger.error(f"❌ Error in {agent_type} agent: {e}")
             return {
@@ -166,10 +219,15 @@ class GreenHillOrchestrator:
     async def process_multi_agent_query(self, question: str, agent_types: List[str]) -> Dict[str, Any]:
         """Process question with multiple agents using full LangGraph system"""
         try:
+            if not HAS_GHC_COMPLETE:
+                raise RuntimeError(
+                    "build_graph is unavailable – install 'ghc_complete' to enable multi-agent analysis."
+                )
+
             logger.info(f"🔗 Multi-Agent Analysis: {', '.join(agent_types)} with full autonomy")
-            
+
             complexity = self.analyze_question_complexity(question)
-            
+
             # Create initial state
             initial_state = {
                 'question': question,
@@ -178,13 +236,13 @@ class GreenHillOrchestrator:
                 'analysis_depth': complexity,
                 'investigation_log': []
             }
-            
+
             # Run through complete LangGraph system
             final_state = self.graph.invoke(
-                initial_state, 
+                initial_state,
                 {'configurable': {'thread_id': f'multi_agent_{datetime.now().isoformat()}'}}
             )
-            
+
             # Log the multi-agent analysis
             log_entry = {
                 'timestamp': datetime.now().isoformat(),
@@ -197,9 +255,9 @@ class GreenHillOrchestrator:
                 'investigation_entries': len(final_state.get('investigation_log', [])),
                 'success': True
             }
-            
+
             self.session_log.append(log_entry)
-            
+
             return {
                 'type': 'multi_agent',
                 'agents': agent_types,
@@ -210,7 +268,7 @@ class GreenHillOrchestrator:
                 'investigation_log': final_state.get('investigation_log', []),
                 'final_agent': final_state.get('current_agent', 'unknown')
             }
-            
+
         except Exception as e:
             logger.error(f"❌ Error in multi-agent analysis: {e}")
             return {
