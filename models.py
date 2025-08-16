@@ -30,38 +30,6 @@ class Message(BaseModel):
     role: str = Field(description="Message sender role")
     content: str = Field(description="Message content")
 
-
-class State(BaseModel):
-    """Global state object for the Green Hill Canarias system"""
-    question: str = Field(..., description="Business task or question")
-    context: Dict = Field(default_factory=dict, description="Context information")
-    history: List[Message] = Field(default_factory=list, description="Message history")
-    notes: List[str] = Field(default_factory=list, description="Agent notes")
-    plan: Optional[Dict] = Field(None, description="Strategic plan")
-    financials: Optional[Dict] = Field(None, description="Financial data")
-    schedule: Optional[Dict] = Field(None, description="Construction schedule")
-    capex_breakdown: Optional[Dict] = Field(None, description="CAPEX breakdown")
-    quality_gaps: Optional[List[str]] = Field(None, description="Quality gaps")
-    controls: Optional[Dict] = Field(None, description="Control systems")
-    decision_log: Optional[List[Dict]] = Field(None, description="Decision log")
-    owners: Optional[Dict] = Field(None, description="Responsibility owners")
-    regulatory_actions: Optional[List[Dict]] = Field(None, description="Regulatory actions")
-    memo: Optional[str] = Field(None, description="Investor memo")
-    deck_outline: Optional[List[str]] = Field(None, description="Presentation outline")
-    current_agent: Optional[AgentName] = Field(None, description="Current agent")
-    next_agent: Optional[AgentName] = Field(None, description="Next agent")
-    finalize: bool = Field(False, description="Finalization flag")
-    decisions: List[Dict] = Field(default_factory=list, description="Decisions made")
-    final_answer: Optional[str] = Field(None, description="Final answer")
-    errors: List[str] = Field(default_factory=list, description="Error messages")
-    sources_used: List[str] = Field(default_factory=list, description="Sources used")
-    processing_mode: str = Field("comprehensive", description="Processing mode")
-
-    class Config:
-        """Pydantic configuration"""
-        arbitrary_types_allowed = True
-    content: str = Field(description="Message content")
-
     def __str__(self) -> str:
         return f"{self.role}: {self.content[:100]}..."
 
@@ -80,61 +48,39 @@ class State(BaseModel):
     history: List[Message] = Field(default_factory=list, description="Message history")
     notes: List[str] = Field(default_factory=list, description="Notes and observations")
     
-    # Intermediate artifacts
-    plan: Optional[Dict] = None
-    financials: Optional[Dict] = None
-    schedule: Optional[Dict] = None
-    capex_breakdown: Optional[Dict] = None
-    quality_gaps: Optional[List[str]] = None
-    controls: Optional[Dict] = None
-    decision_log: Optional[List[Dict]] = None
-    owners: Optional[Dict] = None
-    regulatory_actions: Optional[List[Dict]] = None
-    memo: Optional[str] = None
-    deck_outline: Optional[List[str]] = None
+    # Agent artifacts
+    plan: Optional[Dict[str, Any]] = Field(default=None, description="Strategic plan")
+    financials: Optional[Dict[str, Any]] = Field(default=None, description="Financial analysis")
+    schedule: Optional[Dict[str, Any]] = Field(default=None, description="Construction schedule")
+    capex_breakdown: Optional[Dict[str, Any]] = Field(default=None, description="CAPEX breakdown")
+    
+    # QMS and Governance
+    quality_gaps: Optional[List[str]] = Field(default=None, description="Quality gaps identified")
+    controls: Optional[Dict[str, Any]] = Field(default=None, description="Quality controls")
+    decision_log: Optional[List[Dict[str, Any]]] = Field(default=None, description="Decision log")
+    owners: Optional[Dict[str, Any]] = Field(default=None, description="Decision owners")
+    
+    # Regulation and IR
+    regulatory_actions: Optional[List[Dict[str, Any]]] = Field(default=None, description="Regulatory actions")
+    memo: Optional[str] = Field(default=None, description="Internal memo")
+    deck_outline: Optional[List[str]] = Field(default=None, description="Presentation outline")
     
     # Flow control
-    current_agent: Optional[AgentName] = None
-    next_agent: Optional[AgentName] = None
-    finalize: bool = False
+    current_agent: Optional[AgentName] = Field(default=None, description="Current agent")
+    next_agent: Optional[AgentName] = Field(default=None, description="Next agent")
+    processing_mode: str = Field(default="standard", description="Processing mode: standard, fast, or detailed")
+    finalize: bool = Field(default=False, description="Finalization flag")
     
-    # Final result & errors  
-    decisions: List[Dict] = Field(default_factory=list)
-    final_answer: Optional[str] = None
-    errors: List[str] = Field(default_factory=list)
+    # Outputs and tracking
+    decisions: List[Dict[str, Any]] = Field(default_factory=list, description="All decisions made")
+    sources_used: List[str] = Field(default_factory=list, description="Document sources used")
+    final_answer: Optional[str] = Field(default=None, description="Final comprehensive answer")
+    errors: List[str] = Field(default_factory=list, description="Errors encountered")
     
     # Legacy compatibility
-    messages: List[Dict] = Field(default_factory=list)
-    analysis_depth: str = "medium"
-    investigation_log: List[Dict] = Field(default_factory=list)
-    # Artefactos de agentes
-    plan: Optional[Dict[str, Any]] = Field(default=None, description="Plan estratégico")
-    financials: Optional[Dict[str, Any]] = Field(default=None, description="Análisis financiero")
-    schedule: Optional[Dict[str, Any]] = Field(default=None, description="Cronograma de construcción")
-    capex_breakdown: Optional[Dict[str, Any]] = Field(default=None, description="Desglose CAPEX")
-    
-    # QMS y Gobernanza
-    quality_gaps: Optional[List[str]] = Field(default=None, description="Brechas de calidad identificadas")
-    controls: Optional[Dict[str, Any]] = Field(default=None, description="Controles de calidad")
-    decision_log: Optional[List[Dict[str, Any]]] = Field(default=None, description="Registro de decisiones")
-    owners: Optional[Dict[str, Any]] = Field(default=None, description="Propietarios de decisiones")
-    
-    # Regulación e IR
-    regulatory_actions: Optional[List[Dict[str, Any]]] = Field(default=None, description="Acciones regulatorias")
-    memo: Optional[str] = Field(default=None, description="Memo interno")
-    deck_outline: Optional[List[str]] = Field(default=None, description="Esquema de presentación")
-    
-    # Control de flujo
-    current_agent: Optional[AgentName] = Field(default=None, description="Agente actual")
-    next_agent: Optional[AgentName] = Field(default=None, description="Siguiente agente")
-    processing_mode: str = Field(default="standard", description="Modo de procesamiento: standard, fast, or detailed")
-    finalize: bool = Field(default=False, description="Bandera de finalización")
-    
-    # Salidas y tracking
-    decisions: List[Dict[str, Any]] = Field(default_factory=list, description="Todas las decisiones tomadas")
-    sources_used: List[str] = Field(default_factory=list, description="Fuentes de documentos utilizadas")
-    final_answer: Optional[str] = Field(default=None, description="Respuesta final comprehensive")
-    errors: List[str] = Field(default_factory=list, description="Errores encontrados")
+    messages: List[Dict] = Field(default_factory=list, description="Legacy message list")
+    analysis_depth: str = Field(default="medium", description="Analysis depth level")
+    investigation_log: List[Dict] = Field(default_factory=list, description="Investigation log")
 
     def __str__(self) -> str:
         agent_info = f"Agent: {self.current_agent}" if self.current_agent else "No agent"
@@ -147,7 +93,7 @@ class State(BaseModel):
                 f"finalize={self.finalize})")
 
     class Config:
-        """Configuración de Pydantic"""
+        """Pydantic configuration"""
         use_enum_values = True
         arbitrary_types_allowed = True
         json_encoders = {

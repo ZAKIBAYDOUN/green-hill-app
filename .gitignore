@@ -1,8 +1,15 @@
 # Python
 __pycache__/
 *.pyc
+*.py[cod]
+*$py.class
 .venv/
+venv/
+env/
+ENV/
 .env
+*.log
+langsmith_deploy.log
 
 # Vector store & data
 /data/
@@ -11,6 +18,18 @@ vectorstore/
 *.bin
 *.pickle
 
+# LangGraph checkpoints
+.langgraph_checkpoint*.pckl
+.langgraph_ops.pckl
+.langgraph_retry_counter.pckl
+store*.pckl
+
 # OS/editor
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.temp

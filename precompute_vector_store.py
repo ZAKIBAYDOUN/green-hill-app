@@ -4,15 +4,15 @@ Run locally to (re)build the vector store from your canonical docs.
 Usage (PowerShell):
   $env:OPENAI_API_KEY="sk-..."
   $env:OPENAI_EMBED_MODEL="text-embedding-3-large"
-  $env:GHC_DOCS_DIR="C:\path\to\docs"            # folder with your strategic PDFs/DOCs
-  $env:GHC_VECTOR_OUT="C:\path\to\vectorstore"   # output (Chroma) directory
+  $env:GHC_DOCS_DIR="C:\\path\\to\\docs"            # folder with your strategic PDFs/DOCs
+  $env:GHC_VECTOR_OUT="C:\\path\\to\\vectorstore"   # output (Chroma) directory
   python precompute_vector_store.py
 """
 import os, glob
 from tqdm import tqdm
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.schema import Document
+from langchain_core.documents import Document
 from langchain_chroma import Chroma
 from pypdf import PdfReader
 

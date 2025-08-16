@@ -1,8 +1,8 @@
 # precompute_vector_store.py
 import os
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.docstore.document import Document
-from langchain.vectorstores import Chroma
+from langchain_openai import OpenAIEmbeddings
+from langchain_core.documents import Document
+from langchain_chroma import Chroma
 
 DOCS_DIR = os.getenv("DOCS_DIR", "ghc_docs")
 VECTOR_STORE_DIR = os.getenv("VECTOR_STORE_DIR", "vector_store")
