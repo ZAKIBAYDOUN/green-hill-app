@@ -60,7 +60,11 @@ def query(req: QueryRequest):
 
 @api.post("/api/twin/ingest_texts")
 def ingest_texts(req: IngestTextsRequest):
-    persist_dir = os.getenv("VECTOR_STORE_DIR", "vector_store")
+    persist_dir = (
+        os.getenv("VECTORSTORE_DIR")
+        or os.getenv("VECTOR_STORE_DIR")
+        or "vector_store"
+    )
     store = DocumentStore(persist_dir)
     ok = store.add_texts(texts=req.texts, metadatas=req.metadatas, ids=req.ids)
     if not ok:

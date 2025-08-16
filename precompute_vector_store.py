@@ -21,7 +21,13 @@ from app.document_store import ingest_canonical_docs
 def main(argv: List[str] | None = None):
         parser = argparse.ArgumentParser()
         parser.add_argument("paths", nargs="+", help="Document paths to ingest")
-        parser.add_argument("--persist", default=os.getenv("VECTOR_STORE_DIR", "vector_store"), help="Persist dir")
+        parser.add_argument(
+            "--persist",
+            default=os.getenv("VECTORSTORE_DIR")
+            or os.getenv("VECTOR_STORE_DIR")
+            or "vector_store",
+            help="Persist dir",
+        )
         args = parser.parse_args(argv)
 
         os.makedirs(args.persist, exist_ok=True)

@@ -171,13 +171,13 @@ def finalize_node(state: TwinState, doc_store: DocumentStore) -> TwinState:
     inn = state.innovation_output or {}
 
     parts = [
-        f"🎯 Strategy: {strat.get('strategic_focus', 'N/A')} | {strat.get('timeline', '')}",
-        f"💰 Finance: ROI {fin.get('roi_projection', 'N/A')} | CAPEX {fin.get('capex_estimate', 'N/A')}",
-        f"⚙️ Operations: {ops.get('implementation_schedule', 'N/A')}",
-        f"📊 Market: {mkt.get('growth_projection', 'N/A')} | {mkt.get('market_opportunity', 'N/A')}",
-        f"⚠️ Risk: {rsk.get('risk_assessment', 'N/A')}",
-        f"📋 Compliance: {cmp_.get('timeline', 'N/A')} | {cmp_.get('regulatory_framework', 'N/A')}",
-        f"💡 Innovation: roadmap with {len(inn.get('initiatives', []))} initiatives",
+        f"🎯 Strategy ({strat.get('context_used', 0)} ctx): {strat.get('strategic_focus', 'N/A')} | {strat.get('timeline', '')}",
+        f"💰 Finance ({fin.get('context_used', 0)} ctx): ROI {fin.get('roi_projection', 'N/A')} | CAPEX {fin.get('capex_estimate', 'N/A')}",
+        f"⚙️ Operations ({ops.get('context_used', 0)} ctx): {ops.get('implementation_schedule', 'N/A')}",
+        f"📊 Market ({mkt.get('context_used', 0)} ctx): {mkt.get('growth_projection', 'N/A')} | {mkt.get('market_opportunity', 'N/A')}",
+        f"⚠️ Risk ({rsk.get('context_used', 0)} ctx): {rsk.get('risk_assessment', 'N/A')}",
+        f"📋 Compliance ({cmp_.get('context_used', 0)} ctx): {cmp_.get('timeline', 'N/A')} | {cmp_.get('regulatory_framework', 'N/A')}",
+        f"💡 Innovation ({inn.get('context_used', 0)} ctx): roadmap with {len(inn.get('initiatives', []))} initiatives",
     ]
 
     state.final_answer = (
