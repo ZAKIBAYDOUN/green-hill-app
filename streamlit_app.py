@@ -29,8 +29,13 @@ with st.sidebar:
         options=["(auto)"] + [a.name for a in AgentName],
         index=0,
     )
-    vector_dir = st.text_input("VECTOR_STORE_DIR", value=os.getenv("VECTOR_STORE_DIR", "vector_store"))
-    os.environ["VECTOR_STORE_DIR"] = vector_dir
+    vector_dir = st.text_input(
+        "VECTORSTORE_DIR",
+        value=os.getenv("VECTORSTORE_DIR")
+        or os.getenv("VECTOR_STORE_DIR")
+        or "vector_store",
+    )
+    os.environ["VECTORSTORE_DIR"] = vector_dir
     run_button = st.button("Run Graph")
     st.markdown("---")
     st.caption("Tip: Leave question empty and set payload_ref to test content-only flow.")
