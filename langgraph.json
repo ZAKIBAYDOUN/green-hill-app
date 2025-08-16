@@ -17,5 +17,6 @@
     "langchain-chroma",
     "chromadb",
     "sentence-transformers"
-  ]
+  ],
+  "_comment": "Config updated for correct paths - force refresh"
 }
