@@ -4,18 +4,20 @@ version = "0.1.0"
 description = "Green Hill Canarias Digital Twin (LangGraph multi-agent app)"
 readme = "README.md"
 requires-python = ">=3.11"
+dependencies = [
+    "langchain>=0.2.10",
+    "langgraph>=0.2.5",
+    "langchain-openai",
+    "langchain-huggingface",
+    "langchain-chroma",
+    "chromadb",
+    "sentence-transformers"
+]
 
 [build-system]
 requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-package-dir = {"" = "."}
-
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["app*"]
-namespaces = false
-
-[tool.setuptools.package-data]
-app = ["**/*"]

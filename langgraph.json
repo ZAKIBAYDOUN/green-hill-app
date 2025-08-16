@@ -9,7 +9,6 @@
     "./.langgraph_api/.env.multi_agent"
   ],
   "dependencies": [
-    "./.langgraph_api",
     "langchain>=0.2.10",
     "langgraph>=0.2.5",
     "langchain-openai",
