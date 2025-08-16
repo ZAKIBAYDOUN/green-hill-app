@@ -1,7 +1,7 @@
 # ghc_twin.py
 from langgraph.graph import StateGraph, START, END
 from models import TwinState, AgentName, Message
-from document_store import get_document_store
+from app.document_store import get_document_store
 import os
 import requests
 
