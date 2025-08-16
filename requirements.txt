@@ -1,9 +1,5 @@
-langchain>=0.2.10
-langgraph>=0.2.5
-langchain-openai
-langchain-huggingface
-langchain-chroma
-chromadb
-sentence-transformers
-fastapi
-uvicorn
+streamlit>=1.36
+pydantic>=2.7
+python-dotenv>=1.0
+pyyaml>=6.0
+pandas>=2.2
